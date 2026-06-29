@@ -1,11 +1,11 @@
-# RetailHub 🏪
+# RetailHub
 > **Sistem Kasir & Manajemen Gudang Sembako Desktop**
 
 RetailHub adalah aplikasi desktop kasir (Point of Sales) dan manajemen inventaris toko sembako modern. Dibuat menggunakan kombinasi teknologi berkinerja tinggi: **Tauri (Rust)** untuk backend biner sistem yang aman, **SolidJS** untuk performa UI antarmuka kasir yang sangat responsif, dan **Supabase (PostgreSQL)** untuk penyimpanan database awan terdistribusi.
 
 ---
 
-## ✨ Fitur Utama
+## Fitur Utama
 1. **POS Kasir (Outbound)**: Pencatatan belanja cepat, penghitungan pajak & kembalian otomatis, serta simulasi laser scanner barcode.
 2. **Mutasi Stok Otomatis**: Integrasi Trigger PostgreSQL yang mengurangi jumlah stok barang di rak gudang secara real-time setiap kali transaksi penjualan berhasil disimpan.
 3. **Manajemen Inventaris**: Pengelolaan stok barang dagang dengan kontrol penataan rak gudang, batas minimal stok (*critical warning*), serta tombol mutasi cepat (+1 / -1 Pcs) dan hapus produk.
@@ -15,7 +15,7 @@ RetailHub adalah aplikasi desktop kasir (Point of Sales) dan manajemen inventari
 
 ---
 
-## 🛠️ Persyaratan Sistem
+## Persyaratan Sistem
 Sebelum menjalankan aplikasi, pastikan sistem Anda telah terpasang:
 * [Bun](https://bun.sh/) (Rekomendasi Manajer Paket)
 * [Rust & Cargo Toolchain](https://www.rust-lang.org/)
@@ -23,14 +23,14 @@ Sebelum menjalankan aplikasi, pastikan sistem Anda telah terpasang:
 
 ---
 
-## 🚀 Panduan Memulai
+## Panduan Memulai
 
 ### 1. Migrasi Database Supabase
 Aplikasi ini berjalan di atas database PostgreSQL Supabase. 
 1. Buat proyek baru di [Dashboard Supabase](https://supabase.com/).
 2. Salin seluruh isi berkas **[`supabase/schema.sql`](supabase/schema.sql)**.
 3. Buka **SQL Editor** pada dashboard Supabase proyek Anda, tempelkan skrip SQL tersebut, lalu klik **Run**.
-4. Skrip ini akan membuat tabel-tabel (`users`, `barang`, `transaksi`, `detail_transaksi`), mematikan default RLS untuk desktop client, memasang trigger fungsi pengurang stok otomatis, serta mengisi data awal (*seed data*).
+4. Skrip ini akan membuat tabel-tabel (`users`, `barang`, `transaksi`, `detail_transaksi`), mengaktifkan RLS dan keamanan lanjutan untuk production, memasang trigger fungsi pengurang stok otomatis, serta meregistrasi data pengguna utama.
 
 ### 2. Konfigurasi Variabel Lingkungan (`.env`)
 Salin berkas template `.env.example` menjadi `.env` di direktori utama:
@@ -67,19 +67,17 @@ bun run dev
 
 ---
 
-## 🔑 Kredensial Login Uji Coba (Seed Data)
+## Kredensial Login Utama
 
-Setelah menjalankan `schema.sql`, gunakan akun simulasi berikut untuk menguji otorisasi sistem:
+Setelah menjalankan `schema.sql`, database hanya akan memuat satu akun Administrator yang bersih untuk standar produksi. Silakan gunakan kredensial berikut untuk masuk pertama kali:
 
 | Username | Password | Hak Akses (Role) |
 | :--- | :--- | :--- |
-| **`kasir1`** | `kasir123` | Kasir Utama (Hanya POS & Stok Barang) |
-| **`pemilik`** | `owner123` | Pemilik Toko (Akses penuh Laporan & Kelola Staf) |
-| **`admin`** | `admin123` | Administrator (Akses penuh seluruh sistem) |
+| **`louiscalvin`** | `fireflies2244` | Administrator (Akses penuh seluruh sistem & laporan) |
 
 ---
 
-## 📦 Kompilasi Aplikasi (Production Build)
+## Kompilasi Aplikasi (Production Build)
 
 ### 1. Kompilasi untuk Linux
 Untuk membuat paket aplikasi Linux (`.deb` / `.tar.gz` / AppImage):
@@ -107,7 +105,7 @@ Folder hasil kompilasi web statis (`dist/`) siap dideploy langsung ke Vercel, Ne
 
 ---
 
-## 🧹 Linter & Formatting
+## Linter & Formatting
 Proyek ini menggunakan **Biome** untuk analisis statis kode dan formatting yang super cepat:
 ```bash
 # Menjalankan linter dan format otomatis
