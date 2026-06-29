@@ -6,21 +6,6 @@ export const Route = createFileRoute("/reports")({
 	component: ReportsSimple,
 });
 
-interface Transaksi {
-	id: string;
-	invoice_number: string;
-	created_at: string;
-	grand_total: number;
-}
-
-interface DetailTransaksi {
-	id: string;
-	transaction_id: string;
-	product_name: string;
-	quantity: number;
-	total: number;
-}
-
 interface Barang {
 	id: string;
 	name: string;

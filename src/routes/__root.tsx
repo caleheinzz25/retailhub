@@ -11,6 +11,7 @@ import {
 	type ActiveUser,
 	clearSessionUser,
 	getSessionUser,
+	updateData,
 	verifySession,
 } from "../utils/db";
 
@@ -77,6 +78,57 @@ function RootComponent() {
 				}, 1500);
 			}
 		}, 2000);
+	}
+
+	// Change Password Modal States
+	const [isChangePasswordOpen, setIsChangePasswordOpen] = createSignal(false);
+	const [newPassword, setNewPassword] = createSignal("");
+	const [confirmPassword, setConfirmPassword] = createSignal("");
+	const [changePasswordError, setChangePasswordError] = createSignal("");
+	const [changePasswordSuccess, setChangePasswordSuccess] = createSignal("");
+	const [isChangePasswordLoading, setIsChangePasswordLoading] = createSignal(false);
+
+	async function handleUpdatePassword(e: Event) {
+		e.preventDefault();
+		setChangePasswordError("");
+		setChangePasswordSuccess("");
+
+		if (!newPassword()) {
+			setChangePasswordError("Kata sandi baru tidak boleh kosong.");
+			return;
+		}
+
+		if (newPassword().length < 6) {
+			setChangePasswordError("Kata sandi minimal harus 6 karakter.");
+			return;
+		}
+
+		if (newPassword() !== confirmPassword()) {
+			setChangePasswordError("Konfirmasi kata sandi tidak cocok.");
+			return;
+		}
+
+		const user = currentUser();
+		if (!user) {
+			setChangePasswordError("Sesi login aktif tidak ditemukan.");
+			return;
+		}
+
+		setIsChangePasswordLoading(true);
+		try {
+			await updateData("users", { id: `eq.${user.id}` }, { password: newPassword() });
+			setChangePasswordSuccess("Kata sandi Anda berhasil diperbarui!");
+			setNewPassword("");
+			setConfirmPassword("");
+			setTimeout(() => {
+				setIsChangePasswordOpen(false);
+				setChangePasswordSuccess("");
+			}, 1500);
+		} catch (err: any) {
+			setChangePasswordError(`Gagal memperbarui kata sandi: ${err.message || err}`);
+		} finally {
+			setIsChangePasswordLoading(false);
+		}
 	}
 
 	return (
@@ -215,6 +267,14 @@ function RootComponent() {
 						>
 							<span class="material-symbols-outlined">help</span>
 							<span class="font-label-caps text-label-caps">HELP</span>
+						</button>
+						<button
+							type="button"
+							onClick={() => setIsChangePasswordOpen(true)}
+							class="w-full flex items-center gap-md px-md py-sm text-on-surface-variant hover:bg-surface-variant rounded-lg transition-all cursor-pointer"
+						>
+							<span class="material-symbols-outlined">lock_reset</span>
+							<span class="font-label-caps text-label-caps">UBAH SANDI</span>
 						</button>
 						<button
 							type="button"
@@ -472,6 +532,19 @@ function RootComponent() {
 									type="button"
 									onClick={() => {
 										setIsMobileMenuOpen(false);
+										setIsChangePasswordOpen(true);
+									}}
+									class="w-full flex items-center gap-md px-md py-sm text-on-surface-variant hover:bg-surface-variant rounded-lg transition-all cursor-pointer text-xs font-semibold"
+								>
+									<span class="material-symbols-outlined text-[18px]">
+										lock_reset
+									</span>
+									<span>Ubah Sandi</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => {
+										setIsMobileMenuOpen(false);
 										clearSessionUser();
 										setCurrentUser(null);
 										navigate({ to: "/login" });
@@ -485,6 +558,83 @@ function RootComponent() {
 								</button>
 							</div>
 						</aside>
+					</div>
+				</Show>
+
+				{/* Change Password Modal */}
+				<Show when={isChangePasswordOpen()}>
+					<div class="fixed inset-0 z-[100] flex items-center justify-center bg-zinc-950/80 backdrop-blur-sm animate-fade-in">
+						<div class="bg-zinc-900 border border-zinc-800 p-lg rounded-2xl shadow-2xl w-full max-w-[400px] mx-md space-y-6 animate-scale-up">
+							<div>
+								<h3 class="font-headline-sm text-on-surface text-lg font-bold">Ubah Kata Sandi</h3>
+								<p class="text-xs text-on-surface-variant font-body-md mt-1">Ganti kata sandi akun aktif Anda.</p>
+							</div>
+
+							<form onSubmit={handleUpdatePassword} class="space-y-md">
+								<Show when={changePasswordError()}>
+									<div class="p-3 bg-error/15 border border-error/30 text-error text-xs font-semibold rounded-lg">
+										{changePasswordError()}
+									</div>
+								</Show>
+								
+								<Show when={changePasswordSuccess()}>
+									<div class="p-3 bg-tertiary/15 border border-tertiary/30 text-tertiary text-xs font-semibold rounded-lg animate-pulse">
+										{changePasswordSuccess()}
+									</div>
+								</Show>
+
+								<div class="space-y-xs">
+									<label class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Kata Sandi Baru</label>
+									<input
+										type="password"
+										required
+										value={newPassword()}
+										onInput={(e) => setNewPassword(e.currentTarget.value)}
+										class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-zinc-200 focus:outline-none focus:border-primary text-sm transition-all"
+										placeholder="Minimal 6 karakter"
+									/>
+								</div>
+
+								<div class="space-y-xs">
+									<label class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Konfirmasi Kata Sandi Baru</label>
+									<input
+										type="password"
+										required
+										value={confirmPassword()}
+										onInput={(e) => setConfirmPassword(e.currentTarget.value)}
+										class="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2.5 text-zinc-200 focus:outline-none focus:border-primary text-sm transition-all"
+										placeholder="Masukkan kembali kata sandi baru"
+									/>
+								</div>
+
+								<div class="flex gap-sm justify-end pt-md">
+									<button
+										type="button"
+										onClick={() => {
+											setIsChangePasswordOpen(false);
+											setNewPassword("");
+											setConfirmPassword("");
+											setChangePasswordError("");
+											setChangePasswordSuccess("");
+										}}
+										class="px-lg py-2.5 border border-outline-variant hover:bg-zinc-800 text-zinc-300 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer"
+										disabled={isChangePasswordLoading()}
+									>
+										Batal
+									</button>
+									<button
+										type="submit"
+										class="px-lg py-2.5 bg-primary text-on-primary rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-2 hover:brightness-110 transition-all cursor-pointer shadow-lg disabled:opacity-50"
+										disabled={isChangePasswordLoading()}
+									>
+										<Show when={isChangePasswordLoading()} fallback={<span>Simpan</span>}>
+											<span class="material-symbols-outlined animate-spin text-sm">autorenew</span>
+											<span>Menyimpan...</span>
+										</Show>
+									</button>
+								</div>
+							</form>
+						</div>
 					</div>
 				</Show>
 

@@ -205,10 +205,12 @@ ALTER TABLE keep_alive ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Enable read access for all users" ON users 
     FOR SELECT USING (true);
 
--- Restrict user creation, modification, and deletion to admin & pemilik roles
-CREATE POLICY "Enable modify for admin and pemilik" ON users 
+-- Restrict user creation, modification, and deletion to admin & pemilik roles,
+-- OR allow the logged-in user to modify their own account (needed for self-service password changes)
+CREATE POLICY "Enable modify for admin, pemilik, or self" ON users 
     FOR ALL USING (
-        auth.jwt() ->> 'user_role' IN ('admin', 'pemilik')
+        (auth.jwt() ->> 'user_role' IN ('admin', 'pemilik')) OR
+        (auth.jwt() ->> 'sub' = id::text)
     );
 
 -- 22b. BARANG (PRODUCTS) TABLE SECURITY
