@@ -208,7 +208,7 @@ CREATE POLICY "Enable read access for all users" ON users
 -- Restrict user creation, modification, and deletion to admin & pemilik roles
 CREATE POLICY "Enable modify for admin and pemilik" ON users 
     FOR ALL USING (
-        auth.jwt() ->> 'role' IN ('admin', 'pemilik')
+        auth.jwt() ->> 'user_role' IN ('admin', 'pemilik')
     );
 
 -- 22b. BARANG (PRODUCTS) TABLE SECURITY
@@ -223,7 +223,7 @@ CREATE POLICY "Enable stock updates for cashier/staf" ON barang
 -- Restrict full catalog management (new items, price updates, deletion) to admin & pemilik
 CREATE POLICY "Enable full edit for admin and pemilik" ON barang 
     FOR ALL USING (
-        auth.jwt() ->> 'role' IN ('admin', 'pemilik')
+        auth.jwt() ->> 'user_role' IN ('admin', 'pemilik')
     );
 
 -- 22c. TRANSAKSI (SALES) TABLE SECURITY
@@ -238,7 +238,7 @@ CREATE POLICY "Enable insert access for sales" ON transaksi
 -- Restrict modifying or deleting transaction history to admin & pemilik
 CREATE POLICY "Enable modify sales for admin and pemilik" ON transaksi 
     FOR ALL USING (
-        auth.jwt() ->> 'role' IN ('admin', 'pemilik')
+        auth.jwt() ->> 'user_role' IN ('admin', 'pemilik')
     );
 
 -- 22d. DETAIL_TRANSAKSI SECURITY
@@ -253,7 +253,7 @@ CREATE POLICY "Enable insert access for detail_transaksi" ON detail_transaksi
 -- Restrict modifying transaction details to admin & pemilik
 CREATE POLICY "Enable modify details for admin and pemilik" ON detail_transaksi 
     FOR ALL USING (
-        auth.jwt() ->> 'role' IN ('admin', 'pemilik')
+        auth.jwt() ->> 'user_role' IN ('admin', 'pemilik')
     );
 
 -- 22e. KEEP_ALIVE TABLE SECURITY

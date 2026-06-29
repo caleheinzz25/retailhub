@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/solid-router";
-import { createSignal, createResource, For, Show } from "solid-js";
+import { createResource, createSignal, For, Show } from "solid-js";
 import { selectData } from "../utils/db";
 
 export const Route = createFileRoute("/reports")({
@@ -54,13 +54,15 @@ function ReportsSimple() {
 			}
 
 			const startDateStr = startDate.toISOString();
-			
+
 			// Fetch transactions with their nested details using Supabase embedded query
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			const transaksiWithDetails = await selectData<any[]>("transaksi", {
-				created_at: `gte.${startDateStr}`,
-				select: "id, grand_total, detail_transaksi(product_name, quantity, total)"
-			}) || [];
+			const transaksiWithDetails =
+				(await selectData<any[]>("transaksi", {
+					created_at: `gte.${startDateStr}`,
+					select:
+						"id, grand_total, detail_transaksi(product_name, quantity, total)",
+				})) || [];
 
 			let totalRevenue = 0;
 			let totalItemsSold = 0;
@@ -68,11 +70,11 @@ function ReportsSimple() {
 
 			for (const t of transaksiWithDetails) {
 				totalRevenue += Number(t.grand_total);
-				
+
 				const details = t.detail_transaksi || [];
 				for (const d of details) {
 					totalItemsSold += Number(d.quantity);
-					
+
 					// Aggregate for top products
 					if (!productSales[d.product_name]) {
 						productSales[d.product_name] = 0;
@@ -80,7 +82,7 @@ function ReportsSimple() {
 					productSales[d.product_name] += Number(d.quantity);
 				}
 			}
-			
+
 			const transactionCount = transaksiWithDetails.length;
 
 			// Sort top 5 products
@@ -90,12 +92,13 @@ function ReportsSimple() {
 				.slice(0, 5);
 
 			// Fetch low stock items from barang table
-			const lowStockItemsRaw = await selectData<Barang[]>("barang", {
-				select: "id, name, stock, min_stock, sku"
-			}) || [];
-			
+			const lowStockItemsRaw =
+				(await selectData<Barang[]>("barang", {
+					select: "id, name, stock, min_stock, sku",
+				})) || [];
+
 			const lowStockItems = lowStockItemsRaw
-				.filter(b => b.stock <= b.min_stock)
+				.filter((b) => b.stock <= b.min_stock)
 				.sort((a, b) => a.stock - b.stock);
 
 			return {
@@ -103,9 +106,8 @@ function ReportsSimple() {
 				transactionCount,
 				totalItemsSold,
 				topProducts,
-				lowStockItems
+				lowStockItems,
 			};
-
 		} catch (error) {
 			console.error("Gagal memuat data laporan:", error);
 			showToast("Gagal memuat data laporan dari database.");
@@ -121,7 +123,7 @@ function ReportsSimple() {
 
 		let csvContent = "LAPORAN PENJUALAN RETAILHUB\n";
 		csvContent += `Rentang Waktu: ${timeRange()}\n\n`;
-		
+
 		csvContent += "RINGKASAN METRIK\n";
 		csvContent += `Total Pendapatan,Rp ${data.totalRevenue}\n`;
 		csvContent += `Jumlah Transaksi,${data.transactionCount}\n`;
@@ -147,7 +149,10 @@ function ReportsSimple() {
 		link.href = url;
 		const safeDateStr = new Date().toISOString().slice(0, 10);
 		const safeTimeRange = timeRange().replace(/ /g, "_");
-		link.setAttribute("download", `Laporan_RetailHub_${safeTimeRange}_${safeDateStr}.csv`);
+		link.setAttribute(
+			"download",
+			`Laporan_RetailHub_${safeTimeRange}_${safeDateStr}.csv`,
+		);
 		document.body.appendChild(link);
 		link.click();
 		document.body.removeChild(link);
@@ -175,7 +180,8 @@ function ReportsSimple() {
 						Laporan Toko
 					</h2>
 					<p class="text-on-surface-variant font-body-md">
-						Ringkasan pendapatan, penjualan terlaris, dan pengingat stok sembako Anda.
+						Ringkasan pendapatan, penjualan terlaris, dan pengingat stok sembako
+						Anda.
 					</p>
 				</div>
 				<div class="flex gap-sm shrink-0">
@@ -202,8 +208,12 @@ function ReportsSimple() {
 
 			<Show when={reportData.loading}>
 				<div class="w-full py-20 flex flex-col items-center justify-center gap-4 text-zinc-500">
-					<span class="material-symbols-outlined animate-spin text-4xl">autorenew</span>
-					<p class="text-sm font-semibold animate-pulse">Menghitung data transaksi riil...</p>
+					<span class="material-symbols-outlined animate-spin text-4xl">
+						autorenew
+					</span>
+					<p class="text-sm font-semibold animate-pulse">
+						Menghitung data transaksi riil...
+					</p>
 				</div>
 			</Show>
 
@@ -232,7 +242,8 @@ function ReportsSimple() {
 									</p>
 								</div>
 								<p class="font-data-mono text-4xl font-bold text-on-surface">
-									{data().transactionCount} <span class="text-lg text-zinc-500">Struk</span>
+									{data().transactionCount}{" "}
+									<span class="text-lg text-zinc-500">Struk</span>
 								</p>
 							</div>
 
@@ -244,7 +255,8 @@ function ReportsSimple() {
 									</p>
 								</div>
 								<p class="font-data-mono text-4xl font-bold text-on-surface">
-									{data().totalItemsSold} <span class="text-lg text-zinc-500">Pcs</span>
+									{data().totalItemsSold}{" "}
+									<span class="text-lg text-zinc-500">Pcs</span>
 								</p>
 							</div>
 						</div>
@@ -254,7 +266,9 @@ function ReportsSimple() {
 							{/* Top Produk */}
 							<div class="bg-surface-container border border-outline-variant/60 rounded-xl p-lg shadow-xl">
 								<h3 class="font-headline-sm text-on-surface text-lg font-bold mb-6 flex items-center gap-2">
-									<span class="material-symbols-outlined text-yellow-400">star</span>
+									<span class="material-symbols-outlined text-yellow-400">
+										star
+									</span>
 									5 Produk Terlaris
 								</h3>
 								<div class="space-y-4">
@@ -270,7 +284,9 @@ function ReportsSimple() {
 													<div class="w-8 h-8 rounded bg-primary/20 text-primary flex items-center justify-center font-bold text-xs">
 														#{idx() + 1}
 													</div>
-													<p class="text-sm font-semibold text-zinc-200">{prod.name}</p>
+													<p class="text-sm font-semibold text-zinc-200">
+														{prod.name}
+													</p>
 												</div>
 												<div class="text-right">
 													<p class="font-data-mono font-bold text-tertiary">
@@ -286,7 +302,9 @@ function ReportsSimple() {
 							{/* Stok Menipis */}
 							<div class="bg-surface-container border border-outline-variant/60 rounded-xl p-lg shadow-xl">
 								<h3 class="font-headline-sm text-on-surface text-lg font-bold mb-6 flex items-center gap-2">
-									<span class="material-symbols-outlined text-error">warning</span>
+									<span class="material-symbols-outlined text-error">
+										warning
+									</span>
 									Pengingat Stok Menipis
 								</h3>
 								<div class="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
@@ -299,14 +317,20 @@ function ReportsSimple() {
 										{(item) => (
 											<div class="flex items-center justify-between p-3 bg-error/10 border border-error/30 rounded-lg">
 												<div>
-													<p class="text-sm font-semibold text-zinc-200">{item.name}</p>
-													<p class="text-xs text-zinc-500 font-mono mt-0.5">{item.sku}</p>
+													<p class="text-sm font-semibold text-zinc-200">
+														{item.name}
+													</p>
+													<p class="text-xs text-zinc-500 font-mono mt-0.5">
+														{item.sku}
+													</p>
 												</div>
 												<div class="text-right flex flex-col items-end">
 													<p class="font-data-mono font-bold text-error text-lg leading-none">
 														{item.stock}
 													</p>
-													<p class="text-[10px] text-zinc-400 mt-1">Min: {item.min_stock}</p>
+													<p class="text-[10px] text-zinc-400 mt-1">
+														Min: {item.min_stock}
+													</p>
 												</div>
 											</div>
 										)}

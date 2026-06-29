@@ -9,12 +9,27 @@ const isTauri =
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "";
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
 
+export function getSessionToken(): string | null {
+	try {
+		if (
+			typeof window !== "undefined" &&
+			typeof localStorage !== "undefined" &&
+			localStorage
+		) {
+			return localStorage.getItem("retailhub_session_token");
+		}
+	} catch (err) {
+		console.warn("localStorage is not available:", err);
+	}
+	return null;
+}
+
 function getWebHeaders(userToken?: string) {
 	const headers: Record<string, string> = {
 		apikey: SUPABASE_ANON_KEY,
 		"Content-Type": "application/json",
 	};
-	const token = userToken || SUPABASE_ANON_KEY;
+	const token = userToken || getSessionToken() || SUPABASE_ANON_KEY;
 	if (token) {
 		headers["Authorization"] = `Bearer ${token}`;
 	}
@@ -37,7 +52,7 @@ export async function selectData<T = any>(
 		return invoke<T>("supabase_select", {
 			table,
 			query: query || null,
-			userToken: userToken || null,
+			userToken: userToken || getSessionToken() || null,
 		});
 	} else {
 		const qs = buildQueryString(query);
@@ -59,7 +74,7 @@ export async function insertData<T = any>(
 		return invoke<T>("supabase_insert", {
 			table,
 			body,
-			userToken: userToken || null,
+			userToken: userToken || getSessionToken() || null,
 		});
 	} else {
 		const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
@@ -86,7 +101,7 @@ export async function updateData<T = any>(
 			table,
 			query,
 			body,
-			userToken: userToken || null,
+			userToken: userToken || getSessionToken() || null,
 		});
 	} else {
 		const qs = buildQueryString(query);
@@ -112,7 +127,7 @@ export async function deleteData<T = any>(
 		return invoke<T>("supabase_delete", {
 			table,
 			query,
-			userToken: userToken || null,
+			userToken: userToken || getSessionToken() || null,
 		});
 	} else {
 		const qs = buildQueryString(query);
@@ -213,7 +228,8 @@ export async function setSessionUser(user: ActiveUser): Promise<void> {
 				// Simulating JWT generation on client side for web compatibility (base64 payload encoding)
 				const claims = {
 					sub: user.id,
-					role: user.role,
+					role: "authenticated",
+					user_role: user.role,
 					username: user.username,
 					fullname: user.fullname,
 					exp: Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60, // 7 days expiration

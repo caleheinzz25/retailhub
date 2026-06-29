@@ -6,7 +6,8 @@ use jsonwebtoken::{encode, decode, Header, Validation, EncodingKey, DecodingKey}
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
 	pub sub: String,       // user_id
-	pub role: String,      // user_role
+	pub role: String,      // Always "authenticated" for Supabase PostgREST
+	pub user_role: String, // The actual app role (admin, pemilik, kasir)
 	pub username: String,
 	pub fullname: String,
 	pub exp: usize,        // expiration timestamp
@@ -35,7 +36,8 @@ pub fn generate_user_jwt(
 
 	let claims = Claims {
 		sub: id,
-		role,
+		role: "authenticated".to_string(),
+		user_role: role,
 		username,
 		fullname,
 		exp,
