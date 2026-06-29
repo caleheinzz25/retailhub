@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Outbound Dispatch | WMS Industrial</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-variant": "#32353c",
+                    "surface-tint": "#adc6ff",
+                    "tertiary": "#4edea3",
+                    "secondary-fixed": "#d8e3fb",
+                    "on-surface": "#e1e2ec",
+                    "surface-container-lowest": "#0b0e15",
+                    "on-secondary": "#263143",
+                    "on-tertiary": "#003824",
+                    "background": "#10131a",
+                    "surface-container-high": "#272a31",
+                    "surface-container": "#1d2027",
+                    "primary": "#adc6ff",
+                    "on-background": "#e1e2ec",
+                    "surface-bright": "#363941",
+                    "secondary-fixed-dim": "#bcc7de",
+                    "surface-container-low": "#191b23",
+                    "on-primary": "#002e6a",
+                    "inverse-on-surface": "#2e3038",
+                    "surface-container-highest": "#32353c",
+                    "primary-fixed-dim": "#adc6ff",
+                    "surface-dim": "#10131a",
+                    "outline-variant": "#424754",
+                    "error-container": "#93000a",
+                    "inverse-surface": "#e1e2ec",
+                    "tertiary-fixed": "#6ffbbe",
+                    "primary-container": "#4d8eff",
+                    "on-primary-container": "#00285d",
+                    "on-tertiary-container": "#00311f",
+                    "on-secondary-fixed": "#111c2d",
+                    "on-secondary-fixed-variant": "#3c475a",
+                    "tertiary-fixed-dim": "#4edea3",
+                    "primary-fixed": "#d8e2ff",
+                    "outline": "#8c909f",
+                    "secondary": "#bcc7de",
+                    "error": "#ffb4ab",
+                    "on-surface-variant": "#c2c6d6",
+                    "on-secondary-container": "#aeb9d0",
+                    "on-primary-fixed-variant": "#004395",
+                    "secondary-container": "#3e495d",
+                    "on-tertiary-fixed-variant": "#005236",
+                    "on-primary-fixed": "#001a42",
+                    "on-error": "#690005",
+                    "tertiary-container": "#00a572",
+                    "on-error-container": "#ffdad6",
+                    "surface": "#10131a",
+                    "on-tertiary-fixed": "#002113",
+                    "inverse-primary": "#005ac2"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "sm": "8px",
+                    "xl": "32px",
+                    "margin-desktop": "32px",
+                    "lg": "24px",
+                    "gutter": "16px",
+                    "base": "4px",
+                    "xs": "4px",
+                    "margin-mobile": "16px",
+                    "md": "16px"
+            },
+            "fontFamily": {
+                    "display-lg": ["Inter"],
+                    "label-caps": ["Inter"],
+                    "body-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "headline-sm": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "data-mono": ["JetBrains Mono"]
+            },
+            "fontSize": {
+                    "display-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "data-mono": ["14px", {"lineHeight": "20px", "fontWeight": "500"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #10131a;
+            color: #e1e2ec;
+            -webkit-font-smoothing: antialiased;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .scan-glow {
+            box-shadow: 0 0 15px rgba(173, 198, 255, 0.15);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #191b23;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #424754;
+            border-radius: 10px;
+        }
+        @keyframes pulse-primary {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .animate-pulse-primary {
+            animation: pulse-primary 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        .scanning-line {
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #adc6ff, transparent);
+            animation: scan 2s linear infinite;
+        }
+        @keyframes scan {
+            0% { top: 0; }
+            100% { top: 100%; }
+        }
+    </style>
+</head>
+<body class="flex min-h-screen overflow-hidden bg-background">
+<!-- SideNavBar -->
+<aside class="flex flex-col py-lg gap-sm bg-surface-container fixed left-0 h-full w-[240px] z-50 border-r border-outline-variant/30">
+<div class="px-lg mb-xl">
+<h1 class="font-headline-sm text-headline-sm font-black text-on-surface">WMS Industrial</h1>
+<p class="font-label-caps text-[10px] text-on-surface-variant tracking-widest mt-1 opacity-60">MAIN OPERATIONS</p>
+</div>
+<nav class="flex-1 px-sm space-y-1">
+<a class="flex items-center gap-md px-md py-sm text-on-surface-variant hover:bg-surface-variant transition-transform duration-150 scale-98 font-label-caps text-label-caps" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span> Dashboard
+        </a>
+<a class="flex items-center gap-md px-md py-sm text-on-surface-variant hover:bg-surface-variant transition-transform duration-150 scale-98 font-label-caps text-label-caps" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span> Inventory
+        </a>
+<a class="flex items-center gap-md px-md py-sm text-on-surface-variant hover:bg-surface-variant transition-transform duration-150 scale-98 font-label-caps text-label-caps" href="#">
+<span class="material-symbols-outlined" data-icon="input">input</span> Inbound
+        </a>
+<a class="flex items-center gap-md px-md py-sm text-primary font-bold bg-surface-container-highest rounded-lg transition-transform duration-150 scale-98 font-label-caps text-label-caps" href="#">
+<span class="material-symbols-outlined" data-icon="output">output</span> Outbound
+        </a>
+<a class="flex items-center gap-md px-md py-sm text-on-surface-variant hover:bg-surface-variant transition-transform duration-150 scale-98 font-label-caps text-label-caps" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span> Reports
+        </a>
+</nav>
+<div class="px-sm pt-xl mt-auto border-t border-outline-variant/30">
+<a class="flex items-center gap-md px-md py-sm text-on-surface-variant hover:bg-surface-variant transition-transform duration-150 scale-98 font-label-caps text-label-caps" href="#">
+<span class="material-symbols-outlined" data-icon="help">help</span> Help
+        </a>
+<a class="flex items-center gap-md px-md py-sm text-on-surface-variant hover:bg-surface-variant transition-transform duration-150 scale-98 font-label-caps text-label-caps" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span> Logout
+        </a>
+</div>
+</aside>
+<!-- Main Content Wrapper -->
+<main class="flex-1 ml-[240px] flex flex-col h-screen overflow-hidden">
+<!-- TopNavBar -->
+<header class="flex justify-between items-center px-margin-desktop w-full h-16 bg-surface border-b border-outline-variant z-40">
+<div class="flex items-center gap-xl">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary" data-icon="local_shipping">local_shipping</span>
+<h2 class="font-headline-md text-headline-md font-bold text-primary">Outbound Dispatch</h2>
+</div>
+<div class="hidden md:flex items-center bg-surface-container-low px-md py-xs rounded border border-outline-variant">
+<span class="material-symbols-outlined text-outline text-sm" data-icon="search">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-body-md font-body-md text-on-surface w-48 ml-2" placeholder="Search Order ID..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-lg">
+<button class="flex items-center gap-xs px-md py-xs bg-primary text-on-primary rounded font-bold font-body-md transition-colors duration-200 hover:bg-primary-container">
+<span class="material-symbols-outlined text-md" data-icon="qr_code_scanner">qr_code_scanner</span>
+                Scan Barcode
+            </button>
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors" data-icon="notifications">notifications</span>
+<div class="w-8 h-8 rounded-full bg-surface-container-highest flex items-center justify-center">
+<span class="material-symbols-outlined text-sm text-on-surface" data-icon="person">person</span>
+</div>
+</div>
+</div>
+</header>
+<!-- Scrollable Main Section -->
+<div class="flex-1 overflow-y-auto custom-scrollbar p-margin-desktop">
+<div class="grid grid-cols-12 gap-gutter max-w-[1600px] mx-auto">
+<!-- Left Column -->
+<div class="col-span-12 lg:col-span-8 space-y-gutter">
+<!-- Order Detail Header -->
+<div class="bg-surface-container p-lg rounded shadow-sm border border-outline-variant/30">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-md mb-lg">
+<div>
+<p class="text-on-surface-variant font-label-caps text-xs">ORDER VERIFICATION</p>
+<h3 class="font-headline-sm text-on-surface">Manifest #ORD-2023-8892</h3>
+<div class="flex items-center gap-md mt-1">
+<span class="bg-primary/10 text-primary px-2 py-0.5 rounded text-[10px] font-bold border border-primary/20">PRE-PROCESSING</span>
+<span class="text-on-surface-variant text-body-md flex items-center gap-xs">
+<span class="material-symbols-outlined text-sm" data-icon="schedule">schedule</span>
+                                    Est. Dispatch: 14:30 PM
+                                </span>
+</div>
+</div>
+<div class="flex flex-col items-end">
+<span class="text-primary font-bold text-headline-sm">72%</span>
+<div class="w-48 h-2 bg-surface-container-highest rounded-full overflow-hidden mt-1">
+<div class="bg-primary h-full w-[72%] shadow-[0_0_8px_#adc6ff]"></div>
+</div>
+<p class="text-[10px] text-on-surface-variant mt-1 font-label-caps">18 of 25 items verified</p>
+</div>
+</div>
+<!-- Verifier Scanner Area -->
+<div class="relative w-full aspect-video md:aspect-[21/9] bg-surface-container-lowest border-2 border-dashed border-outline-variant rounded-xl flex flex-col items-center justify-center overflow-hidden group">
+<div class="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]"></div>
+<!-- Scanning Simulation Visuals -->
+<div class="relative z-10 text-center">
+<div class="relative inline-block mb-md">
+<span class="material-symbols-outlined text-6xl text-primary animate-pulse-primary" data-icon="center_focus_weak">center_focus_weak</span>
+<div class="scanning-line absolute w-full top-0 left-0"></div>
+</div>
+<h4 class="font-headline-sm text-on-surface mb-xs">Active Verification Area</h4>
+<p class="text-on-surface-variant text-body-md">Place item barcode under camera or use handheld scanner</p>
+</div>
+<!-- Corners decoration -->
+<div class="absolute top-4 left-4 w-8 h-8 border-t-2 border-l-2 border-primary/40"></div>
+<div class="absolute top-4 right-4 w-8 h-8 border-t-2 border-r-2 border-primary/40"></div>
+<div class="absolute bottom-4 left-4 w-8 h-8 border-b-2 border-l-2 border-primary/40"></div>
+<div class="absolute bottom-4 right-4 w-8 h-8 border-b-2 border-r-2 border-primary/40"></div>
+</div>
+</div>
+<!-- Manifest Table -->
+<div class="bg-surface-container rounded border border-outline-variant/30 overflow-hidden">
+<div class="px-lg py-md border-b border-outline-variant/30 flex justify-between items-center bg-surface-container-high/30">
+<h4 class="font-label-caps text-on-surface font-bold">MANIFEST ITEMS</h4>
+<div class="flex gap-sm">
+<button class="p-xs text-on-surface-variant hover:text-primary"><span class="material-symbols-outlined text-md" data-icon="filter_list">filter_list</span></button>
+<button class="p-xs text-on-surface-variant hover:text-primary"><span class="material-symbols-outlined text-md" data-icon="download">download</span></button>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead class="bg-surface-container-low text-on-surface-variant font-label-caps text-[11px] border-b border-outline-variant/20">
+<tr>
+<th class="px-lg py-sm">SKU / ITEM NAME</th>
+<th class="px-md py-sm">QTY</th>
+<th class="px-md py-sm">SCANNED</th>
+<th class="px-md py-sm">STATUS</th>
+<th class="px-lg py-sm">LOCATION</th>
+</tr>
+</thead>
+<tbody class="text-body-md divide-y divide-outline-variant/10">
+<tr class="hover:bg-surface-container-high/20 transition-colors">
+<td class="px-lg py-md">
+<div class="font-bold text-on-surface">IND-MTL-9012</div>
+<div class="text-xs text-on-surface-variant">High-Tensile Steel Bolt M12</div>
+</td>
+<td class="px-md py-md font-data-mono">10</td>
+<td class="px-md py-md font-data-mono text-tertiary">10</td>
+<td class="px-md py-md">
+<span class="flex items-center gap-xs text-tertiary text-xs font-bold">
+<span class="material-symbols-outlined text-sm" data-icon="check_circle">check_circle</span>
+                                            COMPLETE
+                                        </span>
+</td>
+<td class="px-lg py-md text-on-surface-variant text-xs">ZONE-A-04</td>
+</tr>
+<tr class="bg-primary/5 hover:bg-primary/10 transition-colors">
+<td class="px-lg py-md border-l-2 border-primary">
+<div class="font-bold text-primary">ELC-BRK-4500</div>
+<div class="text-xs text-on-surface-variant">Circuit Breaker 40A Industrial</div>
+</td>
+<td class="px-md py-md font-data-mono">5</td>
+<td class="px-md py-md font-data-mono text-primary">3</td>
+<td class="px-md py-md">
+<span class="flex items-center gap-xs text-primary text-xs font-bold animate-pulse">
+<span class="material-symbols-outlined text-sm" data-icon="sync">sync</span>
+                                            IN PROGRESS
+                                        </span>
+</td>
+<td class="px-lg py-md text-on-surface-variant text-xs">ZONE-B-12</td>
+</tr>
+<tr class="hover:bg-surface-container-high/20 transition-colors">
+<td class="px-lg py-md">
+<div class="font-bold text-on-surface">PNM-VLV-2231</div>
+<div class="text-xs text-on-surface-variant">Pneumatic Control Valve 1/2"</div>
+</td>
+<td class="px-md py-md font-data-mono">10</td>
+<td class="px-md py-md font-data-mono text-on-surface-variant">5</td>
+<td class="px-md py-md">
+<span class="flex items-center gap-xs text-on-surface-variant text-xs font-bold">
+<span class="material-symbols-outlined text-sm" data-icon="pending">pending</span>
+                                            PENDING
+                                        </span>
+</td>
+<td class="px-lg py-md text-on-surface-variant text-xs">ZONE-C-02</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<!-- Right Column -->
+<div class="col-span-12 lg:col-span-4 space-y-gutter">
+<!-- Dispatch Summary -->
+<div class="bg-surface-container-high p-lg rounded shadow-lg border border-primary/20">
+<h4 class="font-label-caps text-on-surface-variant mb-md border-b border-outline-variant/20 pb-sm">DISPATCH SUMMARY</h4>
+<div class="space-y-md">
+<div class="flex justify-between items-center py-sm border-b border-outline-variant/10">
+<span class="text-on-surface-variant text-body-md">Order Reference</span>
+<span class="text-on-surface font-data-mono">ORD-2023-8892</span>
+</div>
+<div class="flex justify-between items-center py-sm border-b border-outline-variant/10">
+<span class="text-on-surface-variant text-body-md">Total Weight (Est)</span>
+<span class="text-on-surface font-data-mono">142.50 kg</span>
+</div>
+<div class="flex justify-between items-center py-sm border-b border-outline-variant/10">
+<span class="text-on-surface-variant text-body-md">Box Count</span>
+<span class="text-on-surface font-data-mono">4 Units</span>
+</div>
+<div class="flex justify-between items-center py-sm">
+<span class="text-on-surface-variant text-body-md">Carrier</span>
+<span class="text-on-surface flex items-center gap-xs">
+<span class="material-symbols-outlined text-sm" data-icon="local_shipping">local_shipping</span>
+                                J&amp;T Express Cargo
+                            </span>
+</div>
+</div>
+<div class="mt-lg pt-lg border-t border-outline-variant/30 space-y-sm">
+<button class="w-full py-md bg-primary text-on-primary rounded font-bold transition-all hover:brightness-110 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+                            Finalize Dispatch
+                        </button>
+<button class="w-full py-md border border-outline text-on-surface-variant rounded font-bold hover:bg-surface-container transition-colors">
+                            Print Shipping Labels
+                        </button>
+</div>
+</div>
+<!-- Live Log -->
+<div class="bg-surface-container p-md rounded border border-outline-variant/30">
+<div class="flex items-center justify-between mb-sm">
+<h4 class="font-label-caps text-[10px] text-on-surface-variant">LIVE SCAN LOG</h4>
+<span class="w-2 h-2 bg-tertiary rounded-full animate-pulse"></span>
+</div>
+<div class="space-y-xs max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
+<div class="bg-surface-container-lowest p-sm rounded border-l-4 border-tertiary">
+<div class="flex justify-between items-start">
+<span class="text-[10px] font-bold text-tertiary">SUCCESS</span>
+<span class="text-[9px] text-on-surface-variant font-data-mono">13:42:10</span>
+</div>
+<p class="text-xs text-on-surface mt-1">Scanned: <span class="font-data-mono">IND-MTL-9012</span> (5/10)</p>
+</div>
+<div class="bg-surface-container-lowest p-sm rounded border-l-4 border-tertiary">
+<div class="flex justify-between items-start">
+<span class="text-[10px] font-bold text-tertiary">SUCCESS</span>
+<span class="text-[9px] text-on-surface-variant font-data-mono">13:41:55</span>
+</div>
+<p class="text-xs text-on-surface mt-1">Scanned: <span class="font-data-mono">ELC-BRK-4500</span> (3/5)</p>
+</div>
+<div class="bg-surface-container-lowest p-sm rounded border-l-4 border-error">
+<div class="flex justify-between items-start">
+<span class="text-[10px] font-bold text-error">MISMATCH</span>
+<span class="text-[9px] text-on-surface-variant font-data-mono">13:40:22</span>
+</div>
+<p class="text-xs text-on-surface mt-1">Invalid SKU: <span class="font-data-mono text-error">TOOL-DRILL-01</span></p>
+</div>
+<div class="bg-surface-container-lowest p-sm rounded border-l-4 border-tertiary opacity-70">
+<div class="flex justify-between items-start">
+<span class="text-[10px] font-bold text-tertiary">SUCCESS</span>
+<span class="text-[9px] text-on-surface-variant font-data-mono">13:38:15</span>
+</div>
+<p class="text-xs text-on-surface mt-1">Scanned: <span class="font-data-mono">IND-MTL-9012</span> (1/10)</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

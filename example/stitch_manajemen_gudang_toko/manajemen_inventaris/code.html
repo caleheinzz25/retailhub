@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Inventory Management | WMS Industrial</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=JetBrains+Mono:wght@500&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-variant": "#32353c",
+                    "surface-tint": "#adc6ff",
+                    "tertiary": "#4edea3",
+                    "secondary-fixed": "#d8e3fb",
+                    "on-surface": "#e1e2ec",
+                    "surface-container-lowest": "#0b0e15",
+                    "on-secondary": "#263143",
+                    "on-tertiary": "#003824",
+                    "background": "#10131a",
+                    "surface-container-high": "#272a31",
+                    "surface-container": "#1d2027",
+                    "primary": "#adc6ff",
+                    "on-background": "#e1e2ec",
+                    "surface-bright": "#363941",
+                    "secondary-fixed-dim": "#bcc7de",
+                    "surface-container-low": "#191b23",
+                    "on-primary": "#002e6a",
+                    "inverse-on-surface": "#2e3038",
+                    "surface-container-highest": "#32353c",
+                    "primary-fixed-dim": "#adc6ff",
+                    "surface-dim": "#10131a",
+                    "outline-variant": "#424754",
+                    "error-container": "#93000a",
+                    "inverse-surface": "#e1e2ec",
+                    "tertiary-fixed": "#6ffbbe",
+                    "primary-container": "#4d8eff",
+                    "on-primary-container": "#00285d",
+                    "on-tertiary-container": "#00311f",
+                    "on-secondary-fixed": "#111c2d",
+                    "on-secondary-fixed-variant": "#3c475a",
+                    "tertiary-fixed-dim": "#4edea3",
+                    "primary-fixed": "#d8e2ff",
+                    "outline": "#8c909f",
+                    "secondary": "#bcc7de",
+                    "error": "#ffb4ab",
+                    "on-surface-variant": "#c2c6d6",
+                    "on-secondary-container": "#aeb9d0",
+                    "on-primary-fixed-variant": "#004395",
+                    "secondary-container": "#3e495d",
+                    "on-tertiary-fixed-variant": "#005236",
+                    "on-primary-fixed": "#001a42",
+                    "on-error": "#690005",
+                    "tertiary-container": "#00a572",
+                    "on-error-container": "#ffdad6",
+                    "surface": "#10131a",
+                    "on-tertiary-fixed": "#002113",
+                    "inverse-primary": "#005ac2"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "sm": "8px",
+                    "xl": "32px",
+                    "margin-desktop": "32px",
+                    "lg": "24px",
+                    "gutter": "16px",
+                    "base": "4px",
+                    "xs": "4px",
+                    "margin-mobile": "16px",
+                    "md": "16px"
+            },
+            "fontFamily": {
+                    "display-lg": ["Inter"],
+                    "label-caps": ["Inter"],
+                    "body-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "headline-sm": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "data-mono": ["JetBrains Mono"]
+            },
+            "fontSize": {
+                    "display-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "data-mono": ["14px", {"lineHeight": "20px", "fontWeight": "500"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .status-badge-in-stock {
+            background-color: rgba(78, 222, 163, 0.1);
+            color: #4edea3;
+        }
+        .status-badge-low-stock {
+            background-color: rgba(255, 180, 171, 0.1);
+            color: #ffb4ab;
+        }
+        
+        /* Interactive feedback */
+        .interactive-scale:active { transform: scale(0.98); }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md selection:bg-primary/30">
+<!-- Sidebar (Shared Component SideNavBar) -->
+<aside class="fixed left-0 h-full w-[240px] bg-surface-container flex flex-col py-lg gap-sm z-50 border-r border-outline-variant">
+<div class="px-md mb-xl">
+<h1 class="font-headline-sm text-headline-sm font-black text-on-surface">WMS Industrial</h1>
+<p class="text-[10px] uppercase tracking-widest text-outline mt-1">Main Operations</p>
+</div>
+<nav class="flex-1 px-sm space-y-1">
+<a class="flex items-center gap-md px-md py-sm text-on-surface-variant hover:bg-surface-variant transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-caps text-label-caps uppercase">Dashboard</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm text-primary font-bold bg-surface-container-highest rounded-lg" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="font-label-caps text-label-caps uppercase">Inventory</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm text-on-surface-variant hover:bg-surface-variant transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined">input</span>
+<span class="font-label-caps text-label-caps uppercase">Inbound</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm text-on-surface-variant hover:bg-surface-variant transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined">output</span>
+<span class="font-label-caps text-label-caps uppercase">Outbound</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm text-on-surface-variant hover:bg-surface-variant transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="font-label-caps text-label-caps uppercase">Reports</span>
+</a>
+</nav>
+<div class="px-sm mt-auto border-t border-outline-variant pt-lg">
+<div class="flex items-center gap-md px-md py-lg mb-sm">
+<div class="w-10 h-10 rounded-full bg-surface-variant flex items-center justify-center overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A professional warehouse floor manager profile picture, clean high-contrast lighting, wearing a tactical dark blue work vest, background is a blurred high-tech industrial logistics center with cool blue and slate grey tones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAtzn5ezzdcjudBOjSsrQ75LL5zJ5N6jy2Lq9Ur0yhb1MhG5ZWYmP9tzCTTjq6UkUdkZEYAj2Bql1ki08-iFA1iTmsyFGCDmr8PmOrD-8PuH7DSbLkP64KvhJgdqwn9jRb3W0Qyztm-rby-GtcL9r8uc15_mSqMcIhA89FNg2FKTbbf3ewEsg_7D1YAcCp7If2yenzgDs6xHUXPYF6Rn42-JU5lkVcfpeGszB3vOM1U5gtVPSLoWhl7voZKzJ9OcXnbkUQAhFcq-3lD"/>
+</div>
+<div>
+<p class="text-body-md font-bold text-on-surface">Floor Manager</p>
+<p class="text-[10px] text-outline">Active Now</p>
+</div>
+</div>
+<a class="flex items-center gap-md px-md py-sm text-on-surface-variant hover:bg-surface-variant transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined">help</span>
+<span class="font-label-caps text-label-caps uppercase">Help</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm text-on-surface-variant hover:bg-surface-variant transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-label-caps text-label-caps uppercase">Logout</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-[240px] flex-1 flex flex-col min-h-screen">
+<!-- Top Bar (Shared Component TopNavBar) -->
+<header class="flex justify-between items-center px-margin-desktop w-full h-16 bg-surface border-b border-outline-variant sticky top-0 z-40">
+<div class="flex items-center gap-xl flex-1">
+<div class="relative w-full max-w-md">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[20px]">search</span>
+<input class="w-full bg-surface-container-low border border-outline-variant rounded-lg py-2 pl-10 pr-4 text-body-md focus:outline-none focus:border-primary transition-colors" placeholder="Search Inventory, SKUs, or Barcodes..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-lg">
+<button class="bg-primary text-on-primary font-bold px-lg py-2 rounded-lg flex items-center gap-sm interactive-scale transition-all hover:bg-primary/90">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">barcode_scanner</span>
+                    Scan Barcode
+                </button>
+<div class="flex items-center gap-md ml-4">
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</div>
+</div>
+</header>
+<!-- View Content -->
+<div class="p-margin-desktop space-y-lg max-w-[1600px] mx-auto w-full">
+<!-- Page Header & Global Controls -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-lg">
+<div>
+<h2 class="font-display-lg text-display-lg text-on-surface">Inventory Management</h2>
+<p class="text-on-surface-variant">Real-time stock monitoring and manifest tracking.</p>
+</div>
+<div class="flex items-center gap-sm">
+<div class="flex bg-surface-container p-1 rounded-lg border border-outline-variant">
+<button class="px-md py-1.5 bg-surface-container-highest text-primary font-bold rounded shadow-sm flex items-center gap-sm">
+<span class="material-symbols-outlined text-[18px]">list</span> All Items
+                        </button>
+<button class="px-md py-1.5 text-on-surface-variant hover:text-on-surface transition-colors flex items-center gap-sm">
+<span class="material-symbols-outlined text-[18px]">warning</span> Low Stock
+                        </button>
+</div>
+<button class="bg-surface-container-high border border-outline-variant text-on-surface font-bold px-lg py-2 rounded-lg flex items-center gap-sm interactive-scale hover:bg-surface-variant transition-colors">
+<span class="material-symbols-outlined">add</span>
+                        Add New Item
+                    </button>
+</div>
+</div>
+<!-- Stats Overview Cards (Bento style) -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-gutter">
+<div class="bg-surface-container p-lg rounded-xl border border-outline-variant relative overflow-hidden group">
+<div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+<span class="material-symbols-outlined text-[64px]">inventory</span>
+</div>
+<p class="text-label-caps font-label-caps text-outline uppercase">Total SKUs</p>
+<h3 class="font-data-mono text-display-lg mt-2">12,842</h3>
+<p class="text-[12px] text-tertiary mt-2 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">trending_up</span> +12% from last month
+                    </p>
+</div>
+<div class="bg-surface-container p-lg rounded-xl border border-outline-variant relative overflow-hidden group">
+<div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+<span class="material-symbols-outlined text-[64px]">error_outline</span>
+</div>
+<p class="text-label-caps font-label-caps text-outline uppercase">Low Stock Alerts</p>
+<h3 class="font-data-mono text-display-lg mt-2 text-error">48</h3>
+<p class="text-[12px] text-error mt-2 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">priority_high</span> Immediate action required
+                    </p>
+</div>
+<div class="bg-surface-container p-lg rounded-xl border border-outline-variant relative overflow-hidden group">
+<div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+<span class="material-symbols-outlined text-[64px]">move_to_inbox</span>
+</div>
+<p class="text-label-caps font-label-caps text-outline uppercase">Expected Today</p>
+<h3 class="font-data-mono text-display-lg mt-2">1,200</h3>
+<p class="text-[12px] text-primary mt-2 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">schedule</span> 4 inbound shipments
+                    </p>
+</div>
+<div class="bg-surface-container p-lg rounded-xl border border-outline-variant relative overflow-hidden group">
+<div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+<span class="material-symbols-outlined text-[64px]">package_2</span>
+</div>
+<p class="text-label-caps font-label-caps text-outline uppercase">Warehouse Capacity</p>
+<h3 class="font-data-mono text-display-lg mt-2">84%</h3>
+<div class="w-full bg-surface-variant h-1 rounded-full mt-4">
+<div class="bg-primary h-1 rounded-full" style="width: 84%;"></div>
+</div>
+</div>
+</div>
+<!-- Search & Filters Container -->
+<div class="bg-surface-container-low p-md rounded-xl border border-outline-variant flex flex-wrap items-center gap-md">
+<div class="flex-1 min-w-[200px]">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[18px]">filter_list</span>
+<input class="w-full bg-transparent border-none py-1.5 pl-10 pr-4 text-body-md focus:ring-0 text-on-surface placeholder:text-outline" placeholder="Quick filter by SKU..." type="text"/>
+</div>
+</div>
+<div class="h-6 w-[1px] bg-outline-variant hidden md:block"></div>
+<div class="flex items-center gap-sm">
+<span class="text-label-caps font-label-caps text-outline">CATEGORY:</span>
+<select class="bg-surface-container-high border-none rounded-lg text-body-md py-1 pl-3 pr-8 focus:ring-1 focus:ring-primary">
+<option>All Categories</option>
+<option>Electronics</option>
+<option>Hardware</option>
+<option>Raw Materials</option>
+<option>Packaging</option>
+</select>
+</div>
+<div class="flex items-center gap-sm">
+<span class="text-label-caps font-label-caps text-outline">STATUS:</span>
+<select class="bg-surface-container-high border-none rounded-lg text-body-md py-1 pl-3 pr-8 focus:ring-1 focus:ring-primary">
+<option>All Status</option>
+<option>In Stock</option>
+<option>Low Stock</option>
+<option>Out of Stock</option>
+<option>Reserved</option>
+</select>
+</div>
+<button class="p-2 text-on-surface-variant hover:bg-surface-variant rounded-lg transition-colors ml-auto">
+<span class="material-symbols-outlined">refresh</span>
+</button>
+</div>
+<!-- Data Table Card -->
+<div class="bg-surface-container border border-outline-variant rounded-xl overflow-hidden">
+<div class="overflow-x-auto scrollbar-hide">
+<table class="w-full text-left border-collapse">
+<thead class="bg-surface-container-high/50 border-b border-outline-variant">
+<tr>
+<th class="px-lg py-md text-label-caps font-label-caps text-outline">
+<div class="flex items-center gap-sm">
+                                        Barcode ID <span class="material-symbols-outlined text-[16px]">arrow_drop_down</span>
+</div>
+</th>
+<th class="px-lg py-md text-label-caps font-label-caps text-outline">Item Name</th>
+<th class="px-lg py-md text-label-caps font-label-caps text-outline">Category</th>
+<th class="px-lg py-md text-label-caps font-label-caps text-outline">Quantity</th>
+<th class="px-lg py-md text-label-caps font-label-caps text-outline">Status</th>
+<th class="px-lg py-md text-label-caps font-label-caps text-outline text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-variant/30 transition-colors group">
+<td class="px-lg py-lg">
+<div class="flex items-center gap-md">
+<div class="p-2 bg-surface-container-highest rounded border border-outline-variant">
+<span class="material-symbols-outlined text-primary text-[20px]">barcode</span>
+</div>
+<span class="font-data-mono text-on-surface">BC-01284-A</span>
+</div>
+</td>
+<td class="px-lg py-lg">
+<div>
+<p class="font-bold text-on-surface">Lithium-Ion Battery Pack</p>
+<p class="text-[12px] text-outline">SKU: BAT-LI-400</p>
+</div>
+</td>
+<td class="px-lg py-lg">
+<span class="px-md py-1 bg-surface-variant text-on-surface-variant rounded-full text-[12px] font-medium">Electronics</span>
+</td>
+<td class="px-lg py-lg">
+<p class="font-data-mono text-body-lg">1,240 <span class="text-[12px] text-outline ml-1">units</span></p>
+</td>
+<td class="px-lg py-lg">
+<span class="status-badge-in-stock px-md py-1 rounded text-[12px] font-bold uppercase tracking-wider">In-Stock</span>
+</td>
+<td class="px-lg py-lg text-right">
+<div class="flex items-center justify-end gap-sm">
+<button class="p-2 text-outline hover:text-primary transition-colors" title="Quick Update">
+<span class="material-symbols-outlined text-[20px]">edit_square</span>
+</button>
+<button class="p-2 text-outline hover:text-tertiary transition-colors" title="View History">
+<span class="material-symbols-outlined text-[20px]">history</span>
+</button>
+<button class="p-2 text-outline hover:text-on-surface transition-colors" title="Quick Update Stock">
+<span class="material-symbols-outlined text-[20px]">add_box</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-variant/30 transition-colors group">
+<td class="px-lg py-lg">
+<div class="flex items-center gap-md">
+<div class="p-2 bg-surface-container-highest rounded border border-outline-variant">
+<span class="material-symbols-outlined text-primary text-[20px]">barcode</span>
+</div>
+<span class="font-data-mono text-on-surface">BC-09321-X</span>
+</div>
+</td>
+<td class="px-lg py-lg">
+<div>
+<p class="font-bold text-on-surface">Hydraulic Valve Housing</p>
+<p class="text-[12px] text-outline">SKU: MEC-HV-102</p>
+</div>
+</td>
+<td class="px-lg py-lg">
+<span class="px-md py-1 bg-surface-variant text-on-surface-variant rounded-full text-[12px] font-medium">Hardware</span>
+</td>
+<td class="px-lg py-lg">
+<p class="font-data-mono text-body-lg text-error">12 <span class="text-[12px] text-outline ml-1">units</span></p>
+</td>
+<td class="px-lg py-lg">
+<span class="status-badge-low-stock px-md py-1 rounded text-[12px] font-bold uppercase tracking-wider">Low-Stock</span>
+</td>
+<td class="px-lg py-lg text-right">
+<div class="flex items-center justify-end gap-sm">
+<button class="p-2 text-outline hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">edit_square</span>
+</button>
+<button class="p-2 text-outline hover:text-tertiary transition-colors">
+<span class="material-symbols-outlined text-[20px]">history</span>
+</button>
+<button class="p-2 text-outline hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-[20px]">add_box</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-variant/30 transition-colors group">
+<td class="px-lg py-lg">
+<div class="flex items-center gap-md">
+<div class="p-2 bg-surface-container-highest rounded border border-outline-variant">
+<span class="material-symbols-outlined text-primary text-[20px]">barcode</span>
+</div>
+<span class="font-data-mono text-on-surface">BC-08874-C</span>
+</div>
+</td>
+<td class="px-lg py-lg">
+<div>
+<p class="font-bold text-on-surface">Steel Enclosure Case</p>
+<p class="text-[12px] text-outline">SKU: ENCL-S-01</p>
+</div>
+</td>
+<td class="px-lg py-lg">
+<span class="px-md py-1 bg-surface-variant text-on-surface-variant rounded-full text-[12px] font-medium">Raw Materials</span>
+</td>
+<td class="px-lg py-lg">
+<p class="font-data-mono text-body-lg">452 <span class="text-[12px] text-outline ml-1">units</span></p>
+</td>
+<td class="px-lg py-lg">
+<span class="status-badge-in-stock px-md py-1 rounded text-[12px] font-bold uppercase tracking-wider">In-Stock</span>
+</td>
+<td class="px-lg py-lg text-right">
+<div class="flex items-center justify-end gap-sm">
+<button class="p-2 text-outline hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">edit_square</span>
+</button>
+<button class="p-2 text-outline hover:text-tertiary transition-colors">
+<span class="material-symbols-outlined text-[20px]">history</span>
+</button>
+<button class="p-2 text-outline hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-[20px]">add_box</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-variant/30 transition-colors group">
+<td class="px-lg py-lg">
+<div class="flex items-center gap-md">
+<div class="p-2 bg-surface-container-highest rounded border border-outline-variant">
+<span class="material-symbols-outlined text-primary text-[20px]">barcode</span>
+</div>
+<span class="font-data-mono text-on-surface">BC-04421-K</span>
+</div>
+</td>
+<td class="px-lg py-lg">
+<div>
+<p class="font-bold text-on-surface">Fiber Optic Cable (50m)</p>
+<p class="text-[12px] text-outline">SKU: CAB-FO-50</p>
+</div>
+</td>
+<td class="px-lg py-lg">
+<span class="px-md py-1 bg-surface-variant text-on-surface-variant rounded-full text-[12px] font-medium">Electronics</span>
+</td>
+<td class="px-lg py-lg">
+<p class="font-data-mono text-body-lg text-error">8 <span class="text-[12px] text-outline ml-1">units</span></p>
+</td>
+<td class="px-lg py-lg">
+<span class="status-badge-low-stock px-md py-1 rounded text-[12px] font-bold uppercase tracking-wider">Low-Stock</span>
+</td>
+<td class="px-lg py-lg text-right">
+<div class="flex items-center justify-end gap-sm">
+<button class="p-2 text-outline hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[20px]">edit_square</span>
+</button>
+<button class="p-2 text-outline hover:text-tertiary transition-colors">
+<span class="material-symbols-outlined text-[20px]">history</span>
+</button>
+<button class="p-2 text-outline hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-[20px]">add_box</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination -->
+<div class="px-lg py-md border-t border-outline-variant flex items-center justify-between">
+<p class="text-[12px] text-outline">Showing 1 to 4 of 12,842 items</p>
+<div class="flex items-center gap-xs">
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-variant transition-colors text-outline">
+<span class="material-symbols-outlined text-[20px]">chevron_left</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg bg-primary/20 text-primary font-bold">1</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-variant transition-colors text-outline">2</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-variant transition-colors text-outline">3</button>
+<span class="text-outline px-1">...</span>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-variant transition-colors text-outline">321</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-variant transition-colors text-outline">
+<span class="material-symbols-outlined text-[20px]">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Contextual Help / Action Card -->
+<div class="bg-primary-container/20 border border-primary/30 p-lg rounded-xl flex items-center gap-lg">
+<div class="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined text-[28px]">tips_and_updates</span>
+</div>
+<div class="flex-1">
+<h4 class="font-bold text-on-primary-container">Optimization Hint</h4>
+<p class="text-body-md text-on-secondary-container">Based on last week's consumption, you might want to increase the reorder point for <span class="font-bold text-primary">Hydraulic Valve Housings</span> to avoid project delays.</p>
+</div>
+<button class="px-lg py-2 bg-primary-container text-on-primary-container font-bold rounded-lg interactive-scale hover:brightness-110 transition-all">
+                    Update Reorder Point
+                </button>
+</div>
+</div>
+<!-- Footer Info -->
+<footer class="mt-auto px-margin-desktop py-md border-t border-outline-variant flex items-center justify-between opacity-50">
+<p class="text-[10px] text-outline uppercase tracking-widest">© 2024 WMS INDUSTRIAL SYSTEMS. ALL RIGHTS RESERVED.</p>
+<div class="flex items-center gap-md">
+<p class="text-[10px] text-outline uppercase tracking-widest flex items-center gap-sm">
+<span class="w-2 h-2 bg-tertiary rounded-full animate-pulse"></span> SYSTEM STATUS: OPERATIONAL
+                </p>
+<p class="text-[10px] text-outline uppercase tracking-widest">SERVER: US-EAST-04</p>
+</div>
+</footer>
+</main>
+<!-- Floating Tooltip Component (Simulated with JS) -->
+<div class="fixed inset-0 pointer-events-none z-[100] transition-opacity duration-300 opacity-0 bg-background/40 backdrop-blur-sm" id="quick-action-overlay"></div>
+<script>
+        // Micro-interaction: Scan button effect
+        const scanBtn = document.querySelector('button:has(span:contains("barcode_scanner"))');
+        if (scanBtn) {
+            scanBtn.addEventListener('click', () => {
+                // Simulate a scan visual feedback
+                const overlay = document.getElementById('quick-action-overlay');
+                overlay.classList.remove('opacity-0');
+                overlay.classList.add('opacity-100');
+                
+                // Rapid blink animation for high-tech feel
+                setTimeout(() => {
+                    overlay.classList.add('opacity-0');
+                    overlay.classList.remove('opacity-100');
+                    console.log('Scanner UI Triggered');
+                }, 800);
+            });
+        }
+
+        // Custom "contains" selector polyfill for simple demo purposes
+        window.addEventListener('DOMContentLoaded', () => {
+           // Basic selection helper
+        });
+    </script>
+</body></html>

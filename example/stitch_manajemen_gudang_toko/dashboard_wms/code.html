@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>WMS Industrial - Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .scan-button-glow {
+            box-shadow: 0 0 20px rgba(173, 198, 255, 0.3);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #191b23;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #424754;
+            border-radius: 10px;
+        }
+        @keyframes pulse-subtle {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .animate-pulse-subtle {
+            animation: pulse-subtle 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-variant": "#32353c",
+                        "surface-tint": "#adc6ff",
+                        "tertiary": "#4edea3",
+                        "secondary-fixed": "#d8e3fb",
+                        "on-surface": "#e1e2ec",
+                        "surface-container-lowest": "#0b0e15",
+                        "on-secondary": "#263143",
+                        "on-tertiary": "#003824",
+                        "background": "#10131a",
+                        "surface-container-high": "#272a31",
+                        "surface-container": "#1d2027",
+                        "primary": "#adc6ff",
+                        "on-background": "#e1e2ec",
+                        "surface-bright": "#363941",
+                        "secondary-fixed-dim": "#bcc7de",
+                        "surface-container-low": "#191b23",
+                        "on-primary": "#002e6a",
+                        "inverse-on-surface": "#2e3038",
+                        "surface-container-highest": "#32353c",
+                        "primary-fixed-dim": "#adc6ff",
+                        "surface-dim": "#10131a",
+                        "outline-variant": "#424754",
+                        "error-container": "#93000a",
+                        "inverse-surface": "#e1e2ec",
+                        "tertiary-fixed": "#6ffbbe",
+                        "primary-container": "#4d8eff",
+                        "on-primary-container": "#00285d",
+                        "on-tertiary-container": "#00311f",
+                        "on-secondary-fixed": "#111c2d",
+                        "on-secondary-fixed-variant": "#3c475a",
+                        "tertiary-fixed-dim": "#4edea3",
+                        "primary-fixed": "#d8e2ff",
+                        "outline": "#8c909f",
+                        "secondary": "#bcc7de",
+                        "error": "#ffb4ab",
+                        "on-surface-variant": "#c2c6d6",
+                        "on-secondary-container": "#aeb9d0",
+                        "on-primary-fixed-variant": "#004395",
+                        "secondary-container": "#3e495d",
+                        "on-tertiary-fixed-variant": "#005236",
+                        "on-primary-fixed": "#001a42",
+                        "on-error": "#690005",
+                        "tertiary-container": "#00a572",
+                        "on-error-container": "#ffdad6",
+                        "surface": "#10131a",
+                        "on-tertiary-fixed": "#002113",
+                        "inverse-primary": "#005ac2"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "sm": "8px",
+                        "xl": "32px",
+                        "margin-desktop": "32px",
+                        "lg": "24px",
+                        "gutter": "16px",
+                        "base": "4px",
+                        "xs": "4px",
+                        "margin-mobile": "16px",
+                        "md": "16px"
+                    },
+                    "fontFamily": {
+                        "display-lg": ["Inter"],
+                        "label-caps": ["Inter"],
+                        "body-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-sm": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "data-mono": ["JetBrains Mono"]
+                    },
+                    "fontSize": {
+                        "display-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "data-mono": ["14px", {"lineHeight": "20px", "fontWeight": "500"}]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background font-body-md overflow-hidden h-screen flex">
+<!-- SideNavBar -->
+<aside class="hidden md:flex flex-col py-lg gap-sm bg-surface-container fixed left-0 h-full w-[240px] z-50">
+<div class="px-lg mb-xl">
+<span class="font-headline-sm text-headline-sm font-black text-on-surface uppercase tracking-tighter">WMS Industrial</span>
+<div class="mt-md flex items-center gap-sm">
+<div class="w-10 h-10 rounded-lg overflow-hidden border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a warehouse floor manager in a dark tech-industrial setting. He is wearing high-visibility gear with subtle blue accents. The lighting is low-key and dramatic, emphasizing reliability and focus, consistent with a dark corporate modern aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBsi54BQLLteqeUW58qE4piZE00ak9cO8xKf3BPDq9jf9mu27q9t5Tn3SoUH9e6XRDtNnEWj0eYY6YS9zI5U95dhAaJ9WDaCW39aF0UfGx0lk8xhQeBWi9baqsFjlYTEK5cLR_s7DIuyLJoCH1tz4nABLKWe-SWdO3B4Cnk4ELZ6pM5o9LsTWLF_cIOEbORBJE0VJRnLcxLfe-nl33-LOtOt1g_4hlXO_Td2J1EggkS_23LrLWGbVV_mzWhfl5tl7y83X18C47VcdlF"/>
+</div>
+<div class="flex flex-col">
+<span class="font-label-caps text-[10px] text-on-surface-variant uppercase tracking-widest">Floor Manager</span>
+<span class="font-body-md text-on-surface font-bold">Main Operations</span>
+</div>
+</div>
+</div>
+<nav class="flex-1 px-sm space-y-1">
+<!-- Active Tab: Dashboard -->
+<a class="flex items-center gap-md px-md py-sm text-primary font-bold bg-surface-container-highest rounded-lg transition-transform duration-150 scale-98" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-caps text-label-caps">DASHBOARD</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm text-on-surface-variant hover:bg-surface-variant rounded-lg transition-transform duration-150" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="font-label-caps text-label-caps">INVENTORY</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm text-on-surface-variant hover:bg-surface-variant rounded-lg transition-transform duration-150" href="#">
+<span class="material-symbols-outlined">input</span>
+<span class="font-label-caps text-label-caps">INBOUND</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm text-on-surface-variant hover:bg-surface-variant rounded-lg transition-transform duration-150" href="#">
+<span class="material-symbols-outlined">output</span>
+<span class="font-label-caps text-label-caps">OUTBOUND</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm text-on-surface-variant hover:bg-surface-variant rounded-lg transition-transform duration-150" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="font-label-caps text-label-caps">REPORTS</span>
+</a>
+</nav>
+<div class="px-sm mt-auto space-y-1">
+<a class="flex items-center gap-md px-md py-sm text-on-surface-variant hover:bg-surface-variant rounded-lg" href="#">
+<span class="material-symbols-outlined">help</span>
+<span class="font-label-caps text-label-caps uppercase">Help</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm text-error hover:bg-error-container/20 rounded-lg" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-label-caps text-label-caps uppercase">Logout</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Wrapper -->
+<div class="flex-1 flex flex-col md:ml-[240px] h-full relative">
+<!-- TopNavBar -->
+<header class="flex justify-between items-center px-margin-desktop w-full h-16 bg-surface border-b border-outline-variant z-40">
+<div class="flex items-center gap-lg">
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-3 text-on-surface-variant text-sm">search</span>
+<input class="bg-surface-container-low border border-outline-variant rounded-lg pl-10 pr-4 py-2 text-body-md focus:outline-none focus:border-primary w-[320px] transition-colors" placeholder="Search SKU, Pallet, or Shipment..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<button class="bg-primary text-on-primary px-lg py-2 rounded-lg font-bold flex items-center gap-sm hover:brightness-110 transition-all scan-button-glow">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">barcode_scanner</span>
+<span>Scan Barcode</span>
+</button>
+<div class="h-6 w-px bg-outline-variant mx-sm"></div>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-lg transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</div>
+</header>
+<!-- Scrollable Dashboard Area -->
+<main class="flex-1 overflow-y-auto p-margin-desktop custom-scrollbar">
+<div class="max-w-7xl mx-auto space-y-lg">
+<!-- Page Title -->
+<div class="flex justify-between items-end mb-lg">
+<div>
+<h1 class="font-display-lg text-display-lg text-on-surface">Floor Dashboard</h1>
+<p class="text-on-surface-variant font-body-md">Real-time logistics monitoring &amp; inventory control</p>
+</div>
+<div class="flex items-center gap-sm text-primary font-data-mono">
+<span class="material-symbols-outlined text-[14px]">schedule</span>
+<span>08:42 AM • SHIFT A</span>
+</div>
+</div>
+<!-- Stats Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter">
+<!-- Total Items -->
+<div class="bg-surface-container-low border border-outline-variant p-lg rounded-xl flex flex-col gap-sm">
+<div class="flex justify-between items-start">
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">Total Inventory</span>
+<span class="material-symbols-outlined text-primary">inventory_2</span>
+</div>
+<div class="flex items-baseline gap-sm mt-sm">
+<span class="font-data-mono text-headline-md text-on-surface">124,502</span>
+<span class="text-tertiary text-xs font-bold">+2.4%</span>
+</div>
+<div class="w-full bg-surface-variant h-1 rounded-full mt-base">
+<div class="bg-primary h-1 rounded-full w-3/4"></div>
+</div>
+</div>
+<!-- Low Stock (Alert) -->
+<div class="bg-surface-container-low border border-error-container/50 p-lg rounded-xl flex flex-col gap-sm">
+<div class="flex justify-between items-start">
+<span class="font-label-caps text-label-caps text-error uppercase">Low Stock Alerts</span>
+<span class="material-symbols-outlined text-error animate-pulse">warning</span>
+</div>
+<div class="flex items-baseline gap-sm mt-sm">
+<span class="font-data-mono text-headline-md text-error">12</span>
+<span class="text-on-surface-variant text-xs">SKUs under threshold</span>
+</div>
+<div class="mt-base">
+<span class="text-[10px] font-bold bg-error-container/20 text-error px-sm py-0.5 rounded border border-error/20">ACTION REQUIRED</span>
+</div>
+</div>
+<!-- Pending Inbound -->
+<div class="bg-surface-container-low border border-outline-variant p-lg rounded-xl flex flex-col gap-sm">
+<div class="flex justify-between items-start">
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">Pending Inbound</span>
+<span class="material-symbols-outlined text-tertiary">login</span>
+</div>
+<div class="flex items-baseline gap-sm mt-sm">
+<span class="font-data-mono text-headline-md text-on-surface">42</span>
+<span class="text-on-surface-variant text-xs font-bold">Containers</span>
+</div>
+<div class="flex -space-x-2 overflow-hidden mt-base">
+<div class="inline-block h-6 w-6 rounded-full ring-2 ring-surface-container-low bg-surface-variant"></div>
+<div class="inline-block h-6 w-6 rounded-full ring-2 ring-surface-container-low bg-surface-container-highest"></div>
+<div class="inline-block h-6 w-6 rounded-full ring-2 ring-surface-container-low bg-primary/20 text-primary text-[10px] flex items-center justify-center font-bold">+8</div>
+</div>
+</div>
+<!-- Outbound Today -->
+<div class="bg-surface-container-low border border-outline-variant p-lg rounded-xl flex flex-col gap-sm">
+<div class="flex justify-between items-start">
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">Outbound Today</span>
+<span class="material-symbols-outlined text-primary-container">logout</span>
+</div>
+<div class="flex items-baseline gap-sm mt-sm">
+<span class="font-data-mono text-headline-md text-on-surface">891</span>
+<span class="text-tertiary text-xs font-bold">92% Met</span>
+</div>
+<div class="mt-base flex items-center gap-xs">
+<span class="material-symbols-outlined text-[14px] text-tertiary">check_circle</span>
+<span class="text-[11px] text-on-surface-variant">Ahead of schedule</span>
+</div>
+</div>
+</div>
+<!-- Main Grid: Charts & Activity -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-lg">
+<!-- Stock Levels Bar Chart (Bento Style) -->
+<div class="lg:col-span-2 bg-surface-container border border-outline-variant rounded-xl p-lg flex flex-col gap-lg">
+<div class="flex justify-between items-center">
+<h3 class="font-headline-sm text-on-surface">Stock Levels by Category</h3>
+<select class="bg-surface-container-high border-none text-xs font-bold text-on-surface-variant rounded-lg focus:ring-0 cursor-pointer">
+<option>Current 24h</option>
+<option>Last 7 Days</option>
+</select>
+</div>
+<div class="flex-1 flex items-end justify-between gap-md h-64 pt-lg px-lg">
+<div class="flex flex-col items-center gap-sm group w-full">
+<div class="w-full bg-primary/20 rounded-t-lg relative flex flex-col justify-end group-hover:bg-primary/40 transition-all cursor-help" style="height: 85%;">
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-surface-container-highest text-[10px] font-mono px-sm py-1 rounded hidden group-hover:block whitespace-nowrap">42.5k</div>
+<div class="w-full bg-primary rounded-t-lg" style="height: 40%;"></div>
+</div>
+<span class="font-label-caps text-[10px] text-on-surface-variant uppercase">Electronics</span>
+</div>
+<div class="flex flex-col items-center gap-sm group w-full">
+<div class="w-full bg-primary/20 rounded-t-lg relative flex flex-col justify-end group-hover:bg-primary/40 transition-all cursor-help" style="height: 60%;">
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-surface-container-highest text-[10px] font-mono px-sm py-1 rounded hidden group-hover:block whitespace-nowrap">31.2k</div>
+<div class="w-full bg-primary rounded-t-lg" style="height: 70%;"></div>
+</div>
+<span class="font-label-caps text-[10px] text-on-surface-variant uppercase">Industrial</span>
+</div>
+<div class="flex flex-col items-center gap-sm group w-full">
+<div class="w-full bg-primary/20 rounded-t-lg relative flex flex-col justify-end group-hover:bg-primary/40 transition-all cursor-help" style="height: 40%;">
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-surface-container-highest text-[10px] font-mono px-sm py-1 rounded hidden group-hover:block whitespace-nowrap">18.9k</div>
+<div class="w-full bg-primary rounded-t-lg" style="height: 55%;"></div>
+</div>
+<span class="font-label-caps text-[10px] text-on-surface-variant uppercase">Chemicals</span>
+</div>
+<div class="flex flex-col items-center gap-sm group w-full">
+<div class="w-full bg-primary/20 rounded-t-lg relative flex flex-col justify-end group-hover:bg-primary/40 transition-all cursor-help" style="height: 95%;">
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-surface-container-highest text-[10px] font-mono px-sm py-1 rounded hidden group-hover:block whitespace-nowrap">55.1k</div>
+<div class="w-full bg-primary rounded-t-lg" style="height: 80%;"></div>
+</div>
+<span class="font-label-caps text-[10px] text-on-surface-variant uppercase">Machinery</span>
+</div>
+<div class="flex flex-col items-center gap-sm group w-full">
+<div class="w-full bg-primary/20 rounded-t-lg relative flex flex-col justify-end group-hover:bg-primary/40 transition-all cursor-help" style="height: 75%;">
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-surface-container-highest text-[10px] font-mono px-sm py-1 rounded hidden group-hover:block whitespace-nowrap">38.4k</div>
+<div class="w-full bg-primary rounded-t-lg" style="height: 60%;"></div>
+</div>
+<span class="font-label-caps text-[10px] text-on-surface-variant uppercase">HVAC</span>
+</div>
+</div>
+<div class="border-t border-outline-variant pt-lg mt-sm flex items-center justify-between">
+<div class="flex gap-lg">
+<div class="flex items-center gap-sm">
+<div class="w-3 h-3 rounded-full bg-primary"></div>
+<span class="text-xs text-on-surface-variant font-medium">In-Stock</span>
+</div>
+<div class="flex items-center gap-sm">
+<div class="w-3 h-3 rounded-full bg-primary/30"></div>
+<span class="text-xs text-on-surface-variant font-medium">Allocated</span>
+</div>
+</div>
+<button class="text-primary text-xs font-bold uppercase tracking-widest hover:underline">Download Detailed CSV</button>
+</div>
+</div>
+<!-- Recent Activity Feed -->
+<div class="bg-surface-container border border-outline-variant rounded-xl p-lg flex flex-col gap-lg overflow-hidden h-[450px]">
+<h3 class="font-headline-sm text-on-surface">Floor Activity</h3>
+<div class="flex-1 space-y-md overflow-y-auto pr-sm custom-scrollbar">
+<!-- Activity Item 1 -->
+<div class="flex gap-md group">
+<div class="flex flex-col items-center gap-xs">
+<div class="p-1.5 bg-surface-container-highest rounded-full border border-outline-variant">
+<span class="material-symbols-outlined text-[16px] text-tertiary">check</span>
+</div>
+<div class="w-0.5 h-full bg-outline-variant"></div>
+</div>
+<div class="pb-md">
+<p class="text-body-md text-on-surface font-semibold">SKU-9902 Received</p>
+<p class="text-[12px] text-on-surface-variant">Operator ID: #1029 • Bay 14B</p>
+<span class="text-[10px] font-data-mono text-outline mt-1 block">08:34:12 AM</span>
+</div>
+</div>
+<!-- Activity Item 2 -->
+<div class="flex gap-md group">
+<div class="flex flex-col items-center gap-xs">
+<div class="p-1.5 bg-error-container/20 rounded-full border border-error/50">
+<span class="material-symbols-outlined text-[16px] text-error">priority_high</span>
+</div>
+<div class="w-0.5 h-full bg-outline-variant"></div>
+</div>
+<div class="pb-md">
+<p class="text-body-md text-on-surface font-semibold">Shortage Alert: Lithium Unit</p>
+<p class="text-[12px] text-on-surface-variant">Auto-triggered reorder (Qty: 250)</p>
+<span class="text-[10px] font-data-mono text-outline mt-1 block">08:21:05 AM</span>
+</div>
+</div>
+<!-- Activity Item 3 -->
+<div class="flex gap-md group">
+<div class="flex flex-col items-center gap-xs">
+<div class="p-1.5 bg-surface-container-highest rounded-full border border-outline-variant">
+<span class="material-symbols-outlined text-[16px] text-primary">local_shipping</span>
+</div>
+<div class="w-0.5 h-full bg-outline-variant"></div>
+</div>
+<div class="pb-md">
+<p class="text-body-md text-on-surface font-semibold">Pallet Dispense: WH-82</p>
+<p class="text-[12px] text-on-surface-variant">Shipment #TR-993 • Gate 03</p>
+<span class="text-[10px] font-data-mono text-outline mt-1 block">07:55:30 AM</span>
+</div>
+</div>
+<!-- Activity Item 4 -->
+<div class="flex gap-md group">
+<div class="flex flex-col items-center gap-xs">
+<div class="p-1.5 bg-surface-container-highest rounded-full border border-outline-variant">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">person</span>
+</div>
+</div>
+<div class="pb-md">
+<p class="text-body-md text-on-surface font-semibold">Shift A Handover Complete</p>
+<p class="text-[12px] text-on-surface-variant">Validated by Manager S. Chen</p>
+<span class="text-[10px] font-data-mono text-outline mt-1 block">07:00:00 AM</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Quick Actions & Inventory Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-lg">
+<!-- Quick Actions Card -->
+<div class="bg-surface-container-high border border-primary/30 rounded-xl p-lg flex flex-col gap-md">
+<h3 class="font-headline-sm text-primary">Quick Actions</h3>
+<div class="grid grid-cols-2 gap-sm">
+<button class="flex flex-col items-center justify-center gap-xs p-md bg-surface-container-highest rounded-lg border border-outline-variant hover:border-primary transition-all">
+<span class="material-symbols-outlined text-primary">add_box</span>
+<span class="text-[11px] font-bold uppercase tracking-tight">New Stock</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-xs p-md bg-surface-container-highest rounded-lg border border-outline-variant hover:border-primary transition-all">
+<span class="material-symbols-outlined text-primary">move_down</span>
+<span class="text-[11px] font-bold uppercase tracking-tight">Relocate</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-xs p-md bg-surface-container-highest rounded-lg border border-outline-variant hover:border-primary transition-all">
+<span class="material-symbols-outlined text-primary">inventory</span>
+<span class="text-[11px] font-bold uppercase tracking-tight">Audit Bin</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-xs p-md bg-surface-container-highest rounded-lg border border-outline-variant hover:border-primary transition-all">
+<span class="material-symbols-outlined text-primary">assignment</span>
+<span class="text-[11px] font-bold uppercase tracking-tight">Manifest</span>
+</button>
+</div>
+</div>
+<!-- Inventory Card: Critical SKU -->
+<div class="bg-surface-container border border-outline-variant rounded-xl p-lg flex flex-col justify-between">
+<div class="flex justify-between items-start">
+<div>
+<span class="text-[10px] font-bold text-tertiary uppercase tracking-widest">High Velocity Item</span>
+<h4 class="font-headline-sm text-on-surface mt-xs">Steel Coil A-4</h4>
+</div>
+<span class="font-data-mono text-on-surface-variant text-[12px]">SKU: SC-9901</span>
+</div>
+<div class="flex items-center justify-between mt-lg">
+<div class="flex flex-col">
+<span class="text-display-lg font-data-mono leading-none">842</span>
+<span class="text-xs text-on-surface-variant font-medium">Units available</span>
+</div>
+<!-- Sparkline Mockup -->
+<div class="flex items-end gap-1 h-12">
+<div class="w-1 bg-tertiary/40 rounded-full" style="height: 40%"></div>
+<div class="w-1 bg-tertiary/40 rounded-full" style="height: 60%"></div>
+<div class="w-1 bg-tertiary/40 rounded-full" style="height: 50%"></div>
+<div class="w-1 bg-tertiary/40 rounded-full" style="height: 80%"></div>
+<div class="w-1 bg-tertiary/40 rounded-full" style="height: 70%"></div>
+<div class="w-1 bg-tertiary rounded-full" style="height: 100%"></div>
+</div>
+</div>
+</div>
+<!-- Inventory Card: Pending Outbound -->
+<div class="bg-surface-container border border-outline-variant rounded-xl p-lg flex flex-col justify-between overflow-hidden relative group">
+<div class="absolute inset-0 bg-primary/5 group-hover:bg-primary/10 transition-colors pointer-events-none"></div>
+<div class="relative z-10">
+<span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Active Dispatch</span>
+<h4 class="font-headline-sm text-on-surface mt-xs">Truck #TX-8292</h4>
+<div class="mt-md space-y-sm">
+<div class="flex justify-between text-xs">
+<span class="text-on-surface-variant">Loading Progress</span>
+<span class="text-primary font-bold">68%</span>
+</div>
+<div class="w-full bg-surface-variant h-2 rounded-full overflow-hidden">
+<div class="bg-primary h-full rounded-full w-[68%]" style="box-shadow: 0 0 10px rgba(173,198,255,0.4)"></div>
+</div>
+</div>
+</div>
+<div class="relative z-10 flex items-center justify-between mt-lg pt-md border-t border-outline-variant">
+<span class="text-[12px] font-data-mono">Est. Departure: 11:30 AM</span>
+<button class="material-symbols-outlined text-primary hover:scale-110 transition-transform">arrow_forward</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- Mobile Navigation Shell (Suppressed on large screens as per instructions) -->
+<nav class="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-surface-container-high border-t border-outline-variant flex items-center justify-around px-margin-mobile z-50">
+<a class="flex flex-col items-center gap-xs text-primary" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-[10px] font-bold uppercase">Home</span>
+</a>
+<a class="flex flex-col items-center gap-xs text-on-surface-variant" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="text-[10px] font-bold uppercase">Stock</span>
+</a>
+<div class="relative -top-6">
+<button class="bg-primary text-on-primary w-14 h-14 rounded-full flex items-center justify-center shadow-lg scan-button-glow border-4 border-background">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">barcode_scanner</span>
+</button>
+</div>
+<a class="flex flex-col items-center gap-xs text-on-surface-variant" href="#">
+<span class="material-symbols-outlined">input</span>
+<span class="text-[10px] font-bold uppercase">In</span>
+</a>
+<a class="flex flex-col items-center gap-xs text-on-surface-variant" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-[10px] font-bold uppercase">Setup</span>
+</a>
+</nav>
+<!-- Contextual FAB for Mobile/Quick View -->
+<button class="md:hidden fixed bottom-24 right-6 bg-primary-container text-on-primary-container p-4 rounded-full shadow-2xl flex items-center gap-2 z-40">
+<span class="material-symbols-outlined">qr_code_scanner</span>
+<span class="font-bold text-xs uppercase tracking-widest">Rapid Scan</span>
+</button>
+<script>
+        // Micro-interactions for industrial dashboard feel
+        document.querySelectorAll('button, a').forEach(el => {
+            el.addEventListener('mousedown', () => {
+                el.style.transform = 'scale(0.97)';
+            });
+            el.addEventListener('mouseup', () => {
+                el.style.transform = '';
+            });
+            el.addEventListener('mouseleave', () => {
+                el.style.transform = '';
+            });
+        });
+
+        // Simulating real-time updates for an active industrial UI
+        setInterval(() => {
+            const lastUpdate = document.querySelector('.text-outline.block');
+            if(lastUpdate) {
+                // Just a subtle flicker to show "live" connection
+                lastUpdate.classList.add('opacity-50');
+                setTimeout(() => lastUpdate.classList.remove('opacity-50'), 100);
+            }
+        }, 5000);
+    </script>
+</body></html>

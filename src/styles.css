@@ -1,0 +1,267 @@
+@import "tailwindcss";
+
+@theme {
+  --color-surface-variant: #32353c;
+  --color-surface-tint: #adc6ff;
+  --color-tertiary: #4edea3;
+  --color-secondary-fixed: #d8e3fb;
+  --color-on-surface: #e1e2ec;
+  --color-surface-container-lowest: #0b0e15;
+  --color-on-secondary: #263143;
+  --color-on-tertiary: #003824;
+  --color-background: #10131a;
+  --color-surface-container-high: #272a31;
+  --color-surface-container: #1d2027;
+  --color-primary: #adc6ff;
+  --color-on-background: #e1e2ec;
+  --color-surface-bright: #363941;
+  --color-secondary-fixed-dim: #bcc7de;
+  --color-surface-container-low: #191b23;
+  --color-on-primary: #002e6a;
+  --color-inverse-on-surface: #2e3038;
+  --color-surface-container-highest: #32353c;
+  --color-primary-fixed-dim: #adc6ff;
+  --color-surface-dim: #10131a;
+  --color-outline-variant: #424754;
+  --color-error-container: #93000a;
+  --color-inverse-surface: #e1e2ec;
+  --color-tertiary-fixed: #6ffbbe;
+  --color-primary-container: #4d8eff;
+  --color-on-primary-container: #00285d;
+  --color-on-tertiary-container: #00311f;
+  --color-on-secondary-fixed: #111c2d;
+  --color-on-secondary-fixed-variant: #3c475a;
+  --color-tertiary-fixed-dim: #4edea3;
+  --color-primary-fixed: #d8e2ff;
+  --color-outline: #8c909f;
+  --color-secondary: #bcc7de;
+  --color-error: #ffb4ab;
+  --color-on-surface-variant: #c2c6d6;
+  --color-on-secondary-container: #aeb9d0;
+  --color-on-primary-fixed-variant: #004395;
+  --color-secondary-container: #3e495d;
+  --color-on-tertiary-fixed-variant: #005236;
+  --color-on-primary-fixed: #001a42;
+  --color-on-error: #690005;
+  --color-tertiary-container: #00a572;
+  --color-on-error-container: #ffdad6;
+  --color-surface: #10131a;
+  --color-on-tertiary-fixed: #002113;
+  --color-inverse-primary: #005ac2;
+
+  --font-sans: "Inter", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+  --font-display-lg: "Inter", sans-serif;
+  --font-label-caps: "Inter", sans-serif;
+  --font-body-md: "Inter", sans-serif;
+  --font-body-lg: "Inter", sans-serif;
+  --font-headline-sm: "Inter", sans-serif;
+  --font-headline-md: "Inter", sans-serif;
+  --font-data-mono: "JetBrains Mono", monospace;
+
+  --spacing-base: 4px;
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-gutter: 16px;
+  --spacing-margin-mobile: 16px;
+  --spacing-margin-desktop: 32px;
+
+  --radius-sm: 0.125rem;
+  --radius-DEFAULT: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-full: 9999px;
+}
+
+:root {
+  --color-surface-variant: #32353c;
+  --color-surface-tint: #adc6ff;
+  --color-tertiary: #4edea3;
+  --color-secondary-fixed: #d8e3fb;
+  --color-on-surface: #e1e2ec;
+  --color-surface-container-lowest: #0b0e15;
+  --color-on-secondary: #263143;
+  --color-on-tertiary: #003824;
+  --color-background: #10131a;
+  --color-surface-container-high: #272a31;
+  --color-surface-container: #1d2027;
+  --color-primary: #adc6ff;
+  --color-on-background: #e1e2ec;
+  --color-surface-bright: #363941;
+  --color-secondary-fixed-dim: #bcc7de;
+  --color-surface-container-low: #191b23;
+  --color-on-primary: #002e6a;
+  --color-inverse-on-surface: #2e3038;
+  --color-surface-container-highest: #32353c;
+  --color-primary-fixed-dim: #adc6ff;
+  --color-surface-dim: #10131a;
+  --color-outline-variant: #424754;
+  --color-error-container: #93000a;
+  --color-inverse-surface: #e1e2ec;
+  --color-tertiary-fixed: #6ffbbe;
+  --color-primary-container: #4d8eff;
+  --color-on-primary-container: #00285d;
+  --color-on-tertiary-container: #00311f;
+  --color-on-secondary-fixed: #111c2d;
+  --color-on-secondary-fixed-variant: #3c475a;
+  --color-tertiary-fixed-dim: #4edea3;
+  --color-primary-fixed: #d8e2ff;
+  --color-outline: #8c909f;
+  --color-secondary: #bcc7de;
+  --color-error: #ffb4ab;
+  --color-on-surface-variant: #c2c6d6;
+  --color-on-secondary-container: #aeb9d0;
+  --color-on-primary-fixed-variant: #004395;
+  --color-secondary-container: #3e495d;
+  --color-on-tertiary-fixed-variant: #005236;
+  --color-on-primary-fixed: #001a42;
+  --color-on-error: #690005;
+  --color-tertiary-container: #00a572;
+  --color-on-error-container: #ffdad6;
+  --color-surface: #10131a;
+  --color-on-tertiary-fixed: #002113;
+  --color-inverse-primary: #005ac2;
+
+  --font-sans: "Inter", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+  --font-display-lg: "Inter", sans-serif;
+  --font-label-caps: "Inter", sans-serif;
+  --font-body-md: "Inter", sans-serif;
+  --font-body-lg: "Inter", sans-serif;
+  --font-headline-sm: "Inter", sans-serif;
+  --font-headline-md: "Inter", sans-serif;
+  --font-data-mono: "JetBrains Mono", monospace;
+
+  --spacing-base: 4px;
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-gutter: 16px;
+  --spacing-margin-mobile: 16px;
+  --spacing-margin-desktop: 32px;
+
+  --radius-sm: 0.125rem;
+  --radius-DEFAULT: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-full: 9999px;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+	min-height: 100%;
+	background-color: #10131a;
+	color: #e1e2ec;
+	font-family: "Inter", sans-serif;
+}
+
+body {
+	margin: 0;
+}
+
+/* Custom classes matching the designs */
+.scan-button-glow {
+	box-shadow: 0 0 20px rgba(173, 198, 255, 0.3);
+}
+
+.scan-glow {
+	box-shadow: 0 0 15px rgba(173, 198, 255, 0.15);
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+	width: 4px;
+	height: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+	background: #191b23;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+	background: #424754;
+	border-radius: 10px;
+}
+
+@keyframes pulse-subtle {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.7;
+	}
+}
+
+.animate-pulse-subtle {
+	animation: pulse-subtle 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse-primary {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.5;
+	}
+}
+
+.animate-pulse-primary {
+	animation: pulse-primary 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.scanning-line {
+	height: 2px;
+	background: linear-gradient(90deg, transparent, #adc6ff, transparent);
+	animation: scan 2s linear infinite;
+}
+
+@keyframes scan {
+	0% {
+		top: 0;
+	}
+	100% {
+		top: 100%;
+	}
+}
+
+.scanner-guide {
+	box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.5);
+}
+
+.status-badge-in-stock {
+	background-color: rgba(78, 222, 163, 0.1);
+	color: #4edea3;
+}
+
+.status-badge-low-stock {
+	background-color: rgba(255, 180, 171, 0.1);
+	color: #ffb4ab;
+}
+
+.interactive-scale:active {
+	transform: scale(0.98);
+}
+
+/* Hide number input default spinner controls globally */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+	-webkit-appearance: none;
+	margin: 0;
+}
+input[type="number"] {
+	-moz-appearance: textfield;
+	appearance: textfield;
+}
