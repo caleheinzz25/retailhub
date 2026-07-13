@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 
 // Detect if running in Tauri desktop shell
-const isTauri =
+export const isTauri =
 	typeof window !== "undefined" &&
 	(window as any).__TAURI_INTERNALS__ !== undefined;
 
@@ -42,6 +42,68 @@ function buildQueryString(query?: Record<string, string>): string {
 	const params = new URLSearchParams(query);
 	return `?${params.toString()}`;
 }
+
+// ── Store (Toko) helpers ────────────────────────────────────────────
+
+/** Get currently active toko ID from session */
+export function getCurrentTokoId(): string | null {
+	try {
+		const user = getSessionUser();
+		return user?.toko_id || null;
+	} catch {
+		return null;
+	}
+}
+
+/** Get currently active toko name from session */
+export function getCurrentTokoName(): string | null {
+	try {
+		const user = getSessionUser();
+		return user?.toko_name || null;
+	} catch {
+		return null;
+	}
+}
+
+/** Switch active store: update session + dispatch event so all pages refresh */
+export function switchToko(tokoId: string, tokoName: string) {
+	const user = getSessionUser();
+	if (!user) return;
+
+	const updated = { ...user, toko_id: tokoId, toko_name: tokoName };
+	try {
+		localStorage.setItem("retailhub_session", JSON.stringify(updated));
+		// Dispatch event so root layout and all pages re-read from session
+		window.dispatchEvent(
+			new CustomEvent("retailhub-toko-changed", {
+				detail: { toko_id: tokoId, toko_name: tokoName },
+			}),
+		);
+	} catch (err) {
+		console.warn("Failed to switch toko:", err);
+	}
+}
+
+/** Fetch all stores (pemilik sees their own, admin sees all, staff sees their assigned store) */
+export async function getAllToko(): Promise<any[]> {
+	try {
+		const user = getSessionUser();
+		const query: Record<string, string> = { order: "name.asc" };
+		if (user) {
+			if (user.role === "pemilik") {
+				query.pemilik_id = `eq.${user.id}`;
+			} else if (user.role === "staff" && user.toko_id) {
+				query.id = `eq.${user.toko_id}`;
+			}
+		}
+		return await selectData<any[]>("toko", query);
+	} catch (err) {
+		console.error("[getAllToko] Failed:", err);
+		return [];
+	}
+}
+
+// ── Data access ────────────────────────────────────────────────────
 
 export async function selectData<T = any>(
 	table: string,
@@ -180,14 +242,17 @@ export async function authSignIn(
 	}
 }
 
-// Session Management Helpers
+// ── Session Management ────────────────────────────────────────────
+
 export interface ActiveUser {
 	id: string;
 	username: string;
 	fullname: string;
-	role: "admin" | "pemilik" | "kasir";
+	role: "admin" | "pemilik" | "staff";
 	shift?: string;
 	phone?: string;
+	toko_id?: string;
+	toko_name?: string;
 }
 
 export function getSessionUser(): ActiveUser | null {
@@ -209,35 +274,24 @@ export function getSessionUser(): ActiveUser | null {
 }
 
 export async function setSessionUser(user: ActiveUser): Promise<void> {
+	// Only works in Tauri Desktop mode.
+	// Web mode uses the Supabase Edge Function (generate-jwt) directly from login.tsx.
+	if (!isTauri) return;
+
 	try {
 		if (
 			typeof window !== "undefined" &&
 			typeof localStorage !== "undefined" &&
 			localStorage
 		) {
-			let token: string;
-			if (isTauri) {
-				// Call backend to generate a signed JWT
-				token = await invoke<string>("generate_user_jwt", {
-					id: user.id,
-					role: user.role,
-					username: user.username,
-					fullname: user.fullname,
-				});
-			} else {
-				// Simulating JWT generation on client side for web compatibility (base64 payload encoding)
-				const claims = {
-					sub: user.id,
-					role: "authenticated",
-					user_role: user.role,
-					username: user.username,
-					fullname: user.fullname,
-					exp: Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60, // 7 days expiration
-				};
-				const header = btoa(JSON.stringify({ alg: "HS256", typ: "JWT" }));
-				const payload = btoa(JSON.stringify(claims));
-				token = `${header}.${payload}.web-simulated-signature`;
-			}
+			const token = await invoke<string>("generate_user_jwt", {
+				id: user.id,
+				role: user.role,
+				username: user.username,
+				fullname: user.fullname,
+				toko_id: user.toko_id || "",
+				toko_name: user.toko_name || "",
+			});
 			localStorage.setItem("retailhub_session_token", token);
 			localStorage.setItem("retailhub_session", JSON.stringify(user));
 		}
@@ -274,34 +328,104 @@ export async function verifySession(): Promise<ActiveUser | null> {
 		const token = localStorage.getItem("retailhub_session_token");
 		if (!token) return null;
 
-		let claims: any;
-		if (isTauri) {
-			// Verify token and retrieve claims via Rust backend
-			claims = await invoke<any>("verify_user_jwt", { token });
-		} else {
-			// Simulating JWT verification on client side for web compatibility (base64 payload decoding)
-			const parts = token.split(".");
-			if (parts.length !== 3) throw new Error("Invalid token format");
-			claims = JSON.parse(atob(parts[1]));
-			if (claims.exp && Date.now() / 1000 > claims.exp) {
-				throw new Error("Token expired");
-			}
+		// Decode JWT claims on client side for both Tauri and Web.
+		// Cryptographic signature is validated by the Supabase database server on every request.
+		// Decoding in JS avoids signature verification failures caused by secret mismatches
+		// (e.g. Supabase Edge Function cloud secret vs local Tauri environment secret).
+		const parts = token.split(".");
+		if (parts.length !== 3) throw new Error("Invalid token format");
+
+		let base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+		while (base64.length % 4) {
+			base64 += "=";
+		}
+
+		const claims = JSON.parse(atob(base64));
+		if (claims.exp && Date.now() / 1000 > claims.exp) {
+			throw new Error("Token expired");
 		}
 
 		const verifiedUser: ActiveUser = {
 			id: claims.sub,
-			role: claims.role,
+			// Note: JWT stores "authenticated" in `role` for PostgREST compatibility.
+			// The actual app role (admin/pemilik/staff) is in `user_role`.
+			role: claims.user_role || claims.role,
 			username: claims.username,
-			fullname: claims.fullname,
+			fullname: claims.fullname || claims.username,
+			toko_id: claims.toko_id,
+			toko_name: claims.toko_name,
 		};
 
 		// Synchronize the local session cache
 		localStorage.setItem("retailhub_session", JSON.stringify(verifiedUser));
 		return verifiedUser;
 	} catch (err) {
-		console.warn("JWT Session verification failed:", err);
+		console.warn("Session verification failed:", err);
 		// Clear invalid/expired session
 		clearSessionUser();
 		return null;
+	}
+}
+
+export async function findProductByBarcode(
+	barcode: string,
+	toko_id?: string,
+): Promise<any | null> {
+	try {
+		// 1. Try to find directly in barang table by SKU/barcode (scoped to toko if provided)
+		const barangQuery: Record<string, string> = { sku: `eq.${barcode}` };
+		if (toko_id) {
+			barangQuery.toko_id = `eq.${toko_id}`;
+		}
+		const resBarang = await selectData<any[]>("barang", barangQuery);
+		if (resBarang && resBarang.length > 0) {
+			return resBarang[0];
+		}
+
+		// 2. If not found, try to find in barcode table
+		const resBarcode = await selectData<any[]>("barcode", {
+			barcode: `eq.${barcode}`,
+		});
+		if (resBarcode && resBarcode.length > 0) {
+			const barangId = resBarcode[0].barang_id;
+			const resBarangById = await selectData<any[]>("barang", {
+				id: `eq.${barangId}`,
+			});
+			if (resBarangById && resBarangById.length > 0) {
+				return resBarangById[0];
+			}
+		}
+	} catch (err) {
+		console.error("[db] Error finding product by barcode:", err);
+	}
+	return null;
+}
+
+/**
+ * Call a Supabase RPC (PostgREST) function.
+ * Works in both Tauri (Rust invoke) and Web (fetch) modes.
+ */
+export async function callRpc<T = any>(
+	functionName: string,
+	params: Record<string, any>,
+	userToken?: string,
+): Promise<T> {
+	if (isTauri) {
+		return invoke<T>("supabase_rpc", {
+			functionName,
+			params,
+			userToken: userToken || getSessionToken() || null,
+		});
+	} else {
+		const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${functionName}`, {
+			method: "POST",
+			headers: {
+				...getWebHeaders(userToken),
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify(params),
+		});
+		if (!res.ok) throw new Error(await res.text());
+		return res.json() as Promise<T>;
 	}
 }

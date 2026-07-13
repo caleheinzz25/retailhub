@@ -6,14 +6,21 @@ import {
 	useNavigate,
 } from "@tanstack/solid-router";
 import { TanStackRouterDevtools } from "@tanstack/solid-router-devtools";
-import { createEffect, createSignal, onMount, Show } from "solid-js";
+import { createEffect, createSignal, For, onMount, Show } from "solid-js";
 import {
 	type ActiveUser,
 	clearSessionUser,
+	findProductByBarcode,
+	getAllToko,
+	getCurrentTokoId,
+	getCurrentTokoName,
 	getSessionUser,
+	selectData,
+	switchToko,
 	updateData,
 	verifySession,
 } from "../utils/db";
+import { isAndroidMobile, scanBarcode } from "../utils/scanner";
 
 import "../styles.css";
 
@@ -28,17 +35,66 @@ function RootComponent() {
 		getSessionUser(),
 	);
 
-	// Verify session authenticity on mount (crypto signature & 7-day expiration check)
+	// ── Store (Toko) Selector State ──────────────────────────────────
+	const [stores, setStores] = createSignal<any[]>([]);
+	const [isStoreModalOpen, setIsStoreModalOpen] = createSignal(false);
+	const [currentTokoId, setCurrentTokoId] = createSignal(
+		getCurrentTokoId() || "",
+	);
+	const [currentTokoName, setCurrentTokoName] = createSignal(
+		getCurrentTokoName() || "Pilih Toko",
+	);
+
+	// Listen for toko changes from other tabs / switchToko calls
+	const handleTokoChanged = (e: CustomEvent) => {
+		if (e.detail) {
+			setCurrentTokoId(e.detail.toko_id || "");
+			setCurrentTokoName(e.detail.toko_name || "Pilih Toko");
+		}
+	};
+
+	const fetchStores = async () => {
+		const allToko = await getAllToko();
+		if (Array.isArray(allToko)) {
+			setStores(allToko);
+		}
+	};
+
 	onMount(async () => {
 		const verified = await verifySession();
 		setCurrentUser(verified);
+
+		// Load stores for the selector
+		await fetchStores();
+
+		// Sync current toko from session
+		const tid = getCurrentTokoId();
+		const tn = getCurrentTokoName();
+		if (tid) setCurrentTokoId(tid);
+		if (tn) setCurrentTokoName(tn);
+
+		// Low stock polling — admin/pemilik only
+		if (verified?.role !== "staff") {
+			await fetchLowStock();
+			setInterval(async () => {
+				if (currentUser()?.role !== "staff") {
+					await fetchLowStock();
+				}
+			}, 120_000);
+		}
 	});
 
 	// Custom event listener to update root session state upon login
 	const handleLoginSuccess = () => {
 		setCurrentUser(getSessionUser());
+		// Reload stores after login
+		fetchStores();
 	};
 
+	window.addEventListener(
+		"retailhub-toko-changed",
+		handleTokoChanged as EventListener,
+	);
 	window.addEventListener("retailhub-login-success", handleLoginSuccess);
 
 	// Navigation Guards
@@ -46,38 +102,91 @@ function RootComponent() {
 		const user = currentUser();
 		const path = location.pathname;
 
-		if (!user && path !== "/login") {
+		if (!user && path !== "/login" && path !== "/register") {
 			setTimeout(() => navigate({ to: "/login" }), 0);
 		} else if (
 			user &&
-			user.role === "kasir" &&
-			(path === "/reports" || path === "/users")
+			user.role === "staff" &&
+			(path === "/reports" || path === "/users" || path === "/stores")
 		) {
-			// Kasir cannot access reports or users management
+			// Staff cannot access reports, users management, or store management
 			setTimeout(() => navigate({ to: "/" }), 0);
 		}
 	});
 
-	const isLoginPage = () => location.pathname === "/login";
+	const isPublicPage = () =>
+		location.pathname === "/login" || location.pathname === "/register";
+
+	// Low Stock Notification state
+	const [lowStockCount, setLowStockCount] = createSignal(0);
+	const [lowStockItems, setLowStockItems] = createSignal<any[]>([]);
+	const [lowStockDismissed, setLowStockDismissed] = createSignal(false);
+
+	const fetchLowStock = async () => {
+		try {
+			const items = await selectData<any[]>("barang", {
+				select: "id,name,stock,min_stock",
+				order: "stock.asc",
+			});
+			if (Array.isArray(items)) {
+				const low = items.filter((b) => b.stock <= b.min_stock);
+				setLowStockItems(low);
+				setLowStockCount(low.length);
+				// Reset dismissed state on each refresh so new data shows
+				setLowStockDismissed(false);
+			}
+		} catch (e) {
+			console.error("[LowStock] Failed to fetch low stock items:", e);
+		}
+	};
 
 	// Global Barcode Scanning simulation state
 	const [isScanning, setIsScanning] = createSignal(false);
 	const [scanResult, setScanResult] = createSignal("");
 	const [isMobileMenuOpen, setIsMobileMenuOpen] = createSignal(false);
 
-	function triggerBarcodeScan() {
-		setIsScanning(true);
-		setScanResult("");
-		// Simulate a successful scan after 2 seconds
-		setTimeout(() => {
-			if (isScanning()) {
-				setScanResult("TERPINDAI: IND-MIE-GRG (Indomie Goreng) - Rp 3.100");
-				// Auto-close overlay after showing result
+	async function triggerBarcodeScan() {
+		if (isAndroidMobile()) {
+			setIsScanning(true);
+			setScanResult("");
+			try {
+				const result = await scanBarcode();
+				if (result) {
+					const item = await findProductByBarcode(result);
+					if (item) {
+						setScanResult(
+							`TERPINDAI: ${item.sku} (${item.name}) - Rp ${parseFloat(item.harga_jual).toLocaleString()}`,
+						);
+					} else {
+						setScanResult(`TERPINDAI: ${result} (Tidak terdaftar)`);
+					}
+					setTimeout(() => {
+						setIsScanning(false);
+					}, 3000);
+				} else {
+					setIsScanning(false);
+				}
+			} catch (e) {
+				console.error("[Scanner] Global scanner error:", e);
+				setScanResult("Gagal memindai barcode.");
 				setTimeout(() => {
 					setIsScanning(false);
-				}, 1500);
+				}, 3000);
 			}
-		}, 2000);
+		} else {
+			setIsScanning(true);
+			setScanResult("");
+			// Simulate a successful scan after 2 seconds
+			setTimeout(() => {
+				if (isScanning()) {
+					setScanResult("TERPINDAI: IND-MIE-GRG (Indomie Goreng) - Rp 3.100");
+					// Auto-close overlay after showing result
+					setTimeout(() => {
+						setIsScanning(false);
+					}, 1500);
+				}
+			}, 2000);
+		}
 	}
 
 	// Change Password Modal States
@@ -86,7 +195,8 @@ function RootComponent() {
 	const [confirmPassword, setConfirmPassword] = createSignal("");
 	const [changePasswordError, setChangePasswordError] = createSignal("");
 	const [changePasswordSuccess, setChangePasswordSuccess] = createSignal("");
-	const [isChangePasswordLoading, setIsChangePasswordLoading] = createSignal(false);
+	const [isChangePasswordLoading, setIsChangePasswordLoading] =
+		createSignal(false);
 
 	async function handleUpdatePassword(e: Event) {
 		e.preventDefault();
@@ -116,7 +226,11 @@ function RootComponent() {
 
 		setIsChangePasswordLoading(true);
 		try {
-			await updateData("users", { id: `eq.${user.id}` }, { password: newPassword() });
+			await updateData(
+				"users",
+				{ id: `eq.${user.id}` },
+				{ password: newPassword() },
+			);
 			setChangePasswordSuccess("Kata sandi Anda berhasil diperbarui!");
 			setNewPassword("");
 			setConfirmPassword("");
@@ -125,7 +239,9 @@ function RootComponent() {
 				setChangePasswordSuccess("");
 			}, 1500);
 		} catch (err: any) {
-			setChangePasswordError(`Gagal memperbarui kata sandi: ${err.message || err}`);
+			setChangePasswordError(
+				`Gagal memperbarui kata sandi: ${err.message || err}`,
+			);
 		} finally {
 			setIsChangePasswordLoading(false);
 		}
@@ -133,7 +249,7 @@ function RootComponent() {
 
 	return (
 		<Show
-			when={!isLoginPage()}
+			when={!isPublicPage()}
 			fallback={
 				<div class="bg-background text-on-background font-body-md h-screen w-screen overflow-hidden flex relative">
 					<Outlet />
@@ -155,14 +271,41 @@ function RootComponent() {
 								</span>
 							</div>
 							<div class="flex flex-col min-w-0">
-								<span class="font-label-caps text-[10px] text-primary uppercase tracking-widest leading-none font-bold">
-									{currentUser()?.role || "Kasir"}
+								<span class="font-body-md text-on-surface font-bold truncate max-w-[130px]">
+									{currentUser()?.fullname || "Staff"}
 								</span>
-								<span class="font-body-md text-on-surface font-bold mt-1 truncate max-w-[130px]">
-									{currentUser()?.fullname || "Kasir Utama"}
+								<span class="font-label-caps text-[10px] text-primary uppercase tracking-widest leading-none font-bold mt-1">
+									{currentUser()?.role || "Staff"}
 								</span>
 							</div>
 						</div>
+					</div>
+
+					{/* Store Selector */}
+					<div class="px-lg mb-sm">
+						<button
+							type="button"
+							onClick={async () => {
+								await fetchStores();
+								setIsStoreModalOpen(true);
+							}}
+							class="w-full flex items-center gap-2 px-3 py-2 bg-surface-container-low hover:bg-surface-variant border border-outline-variant/30 rounded-lg transition-all cursor-pointer text-left"
+						>
+							<span class="material-symbols-outlined text-primary text-[18px]">
+								store
+							</span>
+							<div class="flex-1 min-w-0">
+								<div class="text-[10px] text-on-surface-variant uppercase tracking-wider font-semibold">
+									Toko Aktif
+								</div>
+								<div class="text-xs text-on-surface font-bold truncate max-w-[130px]">
+									{currentTokoName()}
+								</div>
+							</div>
+							<span class="material-symbols-outlined text-on-surface-variant text-[16px]">
+								expand_more
+							</span>
+						</button>
 					</div>
 
 					{/* Nav Links */}
@@ -190,10 +333,15 @@ function RootComponent() {
 							inactiveProps={{
 								class: "text-on-surface-variant hover:bg-surface-variant",
 							}}
-							class="flex items-center gap-md px-md py-sm rounded-lg transition-all duration-150 font-label-caps text-label-caps"
+							class="relative flex items-center gap-md px-md py-sm rounded-lg transition-all duration-150 font-label-caps text-label-caps"
 						>
 							<span class="material-symbols-outlined">inventory</span>
 							<span>Stok Sembako</span>
+							<Show when={lowStockCount() > 0}>
+								<span class="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 shadow-md">
+									{lowStockCount()}
+								</span>
+							</Show>
 						</Link>
 
 						<Link
@@ -225,7 +373,7 @@ function RootComponent() {
 						</Link>
 
 						{/* Role-Protected Nav Links */}
-						<Show when={currentUser()?.role !== "kasir"}>
+						<Show when={currentUser()?.role !== "staff"}>
 							<Link
 								to="/reports"
 								activeProps={{
@@ -241,6 +389,20 @@ function RootComponent() {
 							</Link>
 
 							<Link
+								to="/history"
+								activeProps={{
+									class: "bg-surface-container-highest text-primary font-bold",
+								}}
+								inactiveProps={{
+									class: "text-on-surface-variant hover:bg-surface-variant",
+								}}
+								class="flex items-center gap-md px-md py-sm rounded-lg transition-all duration-150 font-label-caps text-label-caps"
+							>
+								<span class="material-symbols-outlined">receipt_long</span>
+								<span>Riwayat Transaksi</span>
+							</Link>
+
+							<Link
 								to="/users"
 								activeProps={{
 									class: "bg-surface-container-highest text-primary font-bold",
@@ -252,6 +414,20 @@ function RootComponent() {
 							>
 								<span class="material-symbols-outlined">group</span>
 								<span>Kelola Pengguna</span>
+							</Link>
+
+							<Link
+								to="/stores"
+								activeProps={{
+									class: "bg-surface-container-highest text-primary font-bold",
+								}}
+								inactiveProps={{
+									class: "text-on-surface-variant hover:bg-surface-variant",
+								}}
+								class="flex items-center gap-md px-md py-sm rounded-lg transition-all duration-150 font-label-caps text-label-caps"
+							>
+								<span class="material-symbols-outlined">store</span>
+								<span>Kelola Toko</span>
 							</Link>
 						</Show>
 					</nav>
@@ -339,7 +515,7 @@ function RootComponent() {
 							<div class="flex items-center gap-xs">
 								<span class="w-2.5 h-2.5 rounded-full bg-tertiary animate-pulse" />
 								<span class="text-xs text-on-surface-variant font-semibold uppercase tracking-wider hidden sm:inline">
-									Toko Sembako RetailHub
+									{currentTokoName()}
 								</span>
 							</div>
 						</div>
@@ -347,9 +523,143 @@ function RootComponent() {
 
 					{/* Route Outlet */}
 					<main class="flex-1 overflow-y-auto scrollbar-hide bg-background p-sm md:p-md relative">
+						{/* Low Stock Alert Banner */}
+						<Show
+							when={
+								lowStockCount() > 0 &&
+								!lowStockDismissed() &&
+								currentUser()?.role !== "staff"
+							}
+						>
+							<div class="mb-3 flex items-start gap-3 bg-amber-500/10 border border-amber-500/40 rounded-xl px-4 py-3 text-amber-300 text-sm shadow-sm">
+								<span class="material-symbols-outlined text-amber-400 text-[20px] shrink-0 mt-0.5">
+									warning
+								</span>
+								<div class="flex-1 min-w-0">
+									<span class="font-bold text-amber-200">
+										{lowStockCount()} produk stok menipis:{" "}
+									</span>
+									<span class="text-amber-300/90">
+										{lowStockItems()
+											.slice(0, 3)
+											.map((b) => b.name)
+											.join(", ")}
+										{lowStockItems().length > 3
+											? `, +${lowStockItems().length - 3} lainnya`
+											: ""}
+									</span>
+									<span class="mx-1 text-amber-500">—</span>
+									<Link
+										to="/inventory"
+										class="underline underline-offset-2 font-semibold text-amber-200 hover:text-amber-100 transition-colors"
+									>
+										Lihat Inventaris
+									</Link>
+								</div>
+								<button
+									type="button"
+									onClick={() => setLowStockDismissed(true)}
+									class="shrink-0 text-amber-400 hover:text-amber-200 transition-colors cursor-pointer"
+									title="Tutup peringatan"
+								>
+									<span class="material-symbols-outlined text-[18px]">
+										close
+									</span>
+								</button>
+							</div>
+						</Show>
 						<Outlet />
 					</main>
 				</div>
+
+				{/* Store Selector Modal */}
+				<Show when={isStoreModalOpen()}>
+					<div class="fixed inset-0 z-[100] flex items-center justify-center bg-zinc-950/80 backdrop-blur-sm animate-fade-in">
+						<div class="bg-zinc-900 border border-zinc-800 p-lg rounded-2xl shadow-2xl w-full max-w-[420px] mx-md space-y-4 animate-scale-up">
+							<div class="flex items-center justify-between">
+								<div>
+									<h3 class="font-headline-sm text-on-surface text-lg font-bold">
+										Pilih Toko
+									</h3>
+									<p class="text-xs text-on-surface-variant font-body-md mt-1">
+										Ganti toko untuk menampilkan data yang berbeda.
+									</p>
+								</div>
+								<button
+									type="button"
+									onClick={() => setIsStoreModalOpen(false)}
+									class="text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer"
+								>
+									<span class="material-symbols-outlined text-[20px]">
+										close
+									</span>
+								</button>
+							</div>
+
+							<div class="space-y-1 max-h-[320px] overflow-y-auto">
+								<For each={stores()}>
+									{(store) => (
+										<button
+											type="button"
+											onClick={() => {
+												switchToko(store.id, store.name);
+												setCurrentTokoId(store.id);
+												setCurrentTokoName(store.name);
+												setIsStoreModalOpen(false);
+											}}
+											class={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all cursor-pointer ${
+												currentTokoId() === store.id
+													? "bg-primary/10 border border-primary/30 text-primary"
+													: "bg-zinc-950/60 border border-zinc-800/60 text-zinc-300 hover:bg-zinc-800 hover:border-zinc-700"
+											}`}
+										>
+											<div
+												class={`w-9 h-9 rounded-lg flex items-center justify-center ${
+													currentTokoId() === store.id
+														? "bg-primary/20 text-primary"
+														: "bg-zinc-800 text-zinc-400"
+												}`}
+											>
+												<span class="material-symbols-outlined text-[18px]">
+													store
+												</span>
+											</div>
+											<div class="flex-1 min-w-0">
+												<div class="text-sm font-bold truncate">
+													{store.name}
+												</div>
+												<Show when={store.address}>
+													<div class="text-[11px] text-zinc-500 truncate">
+														{store.address}
+													</div>
+												</Show>
+											</div>
+											<Show when={currentTokoId() === store.id}>
+												<span class="material-symbols-outlined text-primary text-[18px]">
+													check_circle
+												</span>
+											</Show>
+										</button>
+									)}
+								</For>
+
+								<Show when={stores().length === 0}>
+									<div class="text-center py-8 text-zinc-500 text-sm">
+										Tidak ada toko tersedia.
+									</div>
+								</Show>
+							</div>
+
+							<button
+								type="button"
+								onClick={() => setIsStoreModalOpen(false)}
+								class="w-full py-2.5 border border-outline-variant hover:bg-zinc-800 text-zinc-300 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer"
+							>
+								Tutup
+							</button>
+						</div>
+					</div>
+				</Show>
 
 				{/* Barcode Scanner Simulation Overlay Modal */}
 				<Show when={isScanning()}>
@@ -442,14 +752,42 @@ function RootComponent() {
 										</span>
 									</div>
 									<div class="flex flex-col min-w-0">
-										<span class="font-label-caps text-[10px] text-primary uppercase tracking-widest leading-none font-bold">
-											{currentUser()?.role || "kasir"}
-										</span>
-										<span class="font-bold text-zinc-200 text-sm truncate mt-1">
+										<span class="font-bold text-zinc-200 text-sm truncate">
 											{currentUser()?.fullname || "Staff Toko"}
+										</span>
+										<span class="font-label-caps text-[10px] text-primary uppercase tracking-widest leading-none font-bold mt-1">
+											{currentUser()?.role || "staff"}
 										</span>
 									</div>
 								</div>
+							</div>
+
+							{/* Mobile Store Selector */}
+							<div class="px-lg mb-sm">
+								<button
+									type="button"
+									onClick={async () => {
+										setIsMobileMenuOpen(false);
+										await fetchStores();
+										setIsStoreModalOpen(true);
+									}}
+									class="w-full flex items-center gap-2 px-3 py-2 bg-surface-container-low hover:bg-surface-variant border border-outline-variant/30 rounded-lg transition-all cursor-pointer text-left"
+								>
+									<span class="material-symbols-outlined text-primary text-[16px]">
+										store
+									</span>
+									<div class="flex-1 min-w-0">
+										<div class="text-[9px] text-on-surface-variant uppercase tracking-wider font-semibold">
+											Toko Aktif
+										</div>
+										<div class="text-xs text-on-surface font-bold truncate max-w-[160px]">
+											{currentTokoName()}
+										</div>
+									</div>
+									<span class="material-symbols-outlined text-on-surface-variant text-[14px]">
+										expand_more
+									</span>
+								</button>
 							</div>
 
 							{/* Nav links */}
@@ -490,17 +828,22 @@ function RootComponent() {
 								<Link
 									to="/inventory"
 									onClick={() => setIsMobileMenuOpen(false)}
-									class="flex items-center gap-md px-md py-sm rounded-lg transition-all duration-150 font-label-caps text-label-caps text-on-surface-variant hover:bg-surface-variant"
+									class="relative flex items-center gap-md px-md py-sm rounded-lg transition-all duration-150 font-label-caps text-label-caps text-on-surface-variant hover:bg-surface-variant"
 									activeClass="bg-primary/10 text-primary border-l-2 border-primary"
 								>
 									<span class="material-symbols-outlined text-[18px]">
 										inventory_2
 									</span>
 									<span>Stok Sembako</span>
+									<Show when={lowStockCount() > 0}>
+										<span class="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 shadow-md">
+											{lowStockCount()}
+										</span>
+									</Show>
 								</Link>
 
 								{/* Admin/Owner Restricted pages */}
-								<Show when={currentUser()?.role !== "kasir"}>
+								<Show when={currentUser()?.role !== "staff"}>
 									<Link
 										to="/reports"
 										onClick={() => setIsMobileMenuOpen(false)}
@@ -513,6 +856,17 @@ function RootComponent() {
 										<span>Laporan Keuangan</span>
 									</Link>
 									<Link
+										to="/history"
+										onClick={() => setIsMobileMenuOpen(false)}
+										class="flex items-center gap-md px-md py-sm rounded-lg transition-all duration-150 font-label-caps text-label-caps text-on-surface-variant hover:bg-surface-variant"
+										activeClass="bg-primary/10 text-primary border-l-2 border-primary"
+									>
+										<span class="material-symbols-outlined text-[18px]">
+											receipt_long
+										</span>
+										<span>Riwayat Transaksi</span>
+									</Link>
+									<Link
 										to="/users"
 										onClick={() => setIsMobileMenuOpen(false)}
 										class="flex items-center gap-md px-md py-sm rounded-lg transition-all duration-150 font-label-caps text-label-caps text-on-surface-variant hover:bg-surface-variant"
@@ -522,6 +876,17 @@ function RootComponent() {
 											group
 										</span>
 										<span>Kelola Staf</span>
+									</Link>
+									<Link
+										to="/stores"
+										onClick={() => setIsMobileMenuOpen(false)}
+										class="flex items-center gap-md px-md py-sm rounded-lg transition-all duration-150 font-label-caps text-label-caps text-on-surface-variant hover:bg-surface-variant"
+										activeClass="bg-primary/10 text-primary border-l-2 border-primary"
+									>
+										<span class="material-symbols-outlined text-[18px]">
+											store
+										</span>
+										<span>Kelola Toko</span>
 									</Link>
 								</Show>
 							</nav>
@@ -566,8 +931,12 @@ function RootComponent() {
 					<div class="fixed inset-0 z-[100] flex items-center justify-center bg-zinc-950/80 backdrop-blur-sm animate-fade-in">
 						<div class="bg-zinc-900 border border-zinc-800 p-lg rounded-2xl shadow-2xl w-full max-w-[400px] mx-md space-y-6 animate-scale-up">
 							<div>
-								<h3 class="font-headline-sm text-on-surface text-lg font-bold">Ubah Kata Sandi</h3>
-								<p class="text-xs text-on-surface-variant font-body-md mt-1">Ganti kata sandi akun aktif Anda.</p>
+								<h3 class="font-headline-sm text-on-surface text-lg font-bold">
+									Ubah Kata Sandi
+								</h3>
+								<p class="text-xs text-on-surface-variant font-body-md mt-1">
+									Ganti kata sandi akun aktif Anda.
+								</p>
 							</div>
 
 							<form onSubmit={handleUpdatePassword} class="space-y-md">
@@ -576,7 +945,7 @@ function RootComponent() {
 										{changePasswordError()}
 									</div>
 								</Show>
-								
+
 								<Show when={changePasswordSuccess()}>
 									<div class="p-3 bg-tertiary/15 border border-tertiary/30 text-tertiary text-xs font-semibold rounded-lg animate-pulse">
 										{changePasswordSuccess()}
@@ -584,7 +953,9 @@ function RootComponent() {
 								</Show>
 
 								<div class="space-y-xs">
-									<label class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Kata Sandi Baru</label>
+									<label class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+										Kata Sandi Baru
+									</label>
 									<input
 										type="password"
 										required
@@ -596,7 +967,9 @@ function RootComponent() {
 								</div>
 
 								<div class="space-y-xs">
-									<label class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Konfirmasi Kata Sandi Baru</label>
+									<label class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+										Konfirmasi Kata Sandi Baru
+									</label>
 									<input
 										type="password"
 										required
@@ -627,8 +1000,13 @@ function RootComponent() {
 										class="px-lg py-2.5 bg-primary text-on-primary rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-2 hover:brightness-110 transition-all cursor-pointer shadow-lg disabled:opacity-50"
 										disabled={isChangePasswordLoading()}
 									>
-										<Show when={isChangePasswordLoading()} fallback={<span>Simpan</span>}>
-											<span class="material-symbols-outlined animate-spin text-sm">autorenew</span>
+										<Show
+											when={isChangePasswordLoading()}
+											fallback={<span>Simpan</span>}
+										>
+											<span class="material-symbols-outlined animate-spin text-sm">
+												autorenew
+											</span>
 											<span>Menyimpan...</span>
 										</Show>
 									</button>

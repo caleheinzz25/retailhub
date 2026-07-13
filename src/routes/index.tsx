@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/solid-router";
 import { createSignal, For, onMount } from "solid-js";
-import { selectData } from "../utils/db";
+import { getCurrentTokoId, selectData } from "../utils/db";
 
 export const Route = createFileRoute("/")({
 	component: FloorDashboard,
@@ -31,8 +31,11 @@ function FloorDashboard() {
 
 	onMount(async () => {
 		try {
+			const tokoId = getCurrentTokoId();
+			const tokoFilter = tokoId ? { toko_id: `eq.${tokoId}` } : {};
+
 			// 1. Fetch live stock info from Supabase
-			const barangRes = await selectData<any[]>("barang");
+			const barangRes = await selectData<any[]>("barang", tokoFilter);
 			if (barangRes) {
 				const totalQty = barangRes.reduce(
 					(acc, item) => acc + (parseInt(item.stock) || 0),
@@ -60,7 +63,7 @@ function FloorDashboard() {
 			}
 
 			// 2. Fetch completed transactions
-			const txRes = await selectData<any[]>("transaksi");
+			const txRes = await selectData<any[]>("transaksi", tokoFilter);
 			if (txRes) {
 				// Calculate today's omset (since this is a demo, we sum all invoices)
 				const totalRevenue = txRes.reduce(
@@ -107,7 +110,7 @@ function FloorDashboard() {
 				{
 					id: Date.now(),
 					title: "Audit Stok: Data Fisik Sinkron",
-					subtitle: "Oleh Admin Toko",
+					subtitle: "Oleh Admin",
 					time: new Date().toLocaleTimeString(),
 					type: "info",
 				},
@@ -117,7 +120,7 @@ function FloorDashboard() {
 	}
 
 	return (
-		<div class="p-margin-desktop space-y-lg max-w-[1600px] mx-auto w-full animate-fade-in pb-12">
+		<div class="p-margin-mobile md:p-margin-desktop space-y-lg max-w-[1600px] mx-auto w-full animate-fade-in pb-12">
 			{/* Toast Message Notification */}
 			{activeToast() && (
 				<div class="fixed top-20 right-8 z-50 bg-indigo-600 border border-indigo-400 text-zinc-100 px-6 py-3 rounded-xl shadow-2xl animate-slide-up flex items-center gap-sm">
@@ -127,23 +130,23 @@ function FloorDashboard() {
 			)}
 
 			{/* Page Title & Shift Details */}
-			<div class="flex justify-between items-end mb-lg">
+			<div class="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-sm mb-lg">
 				<div>
 					<h1 class="font-display-lg text-display-lg text-on-surface">
 						Dashboard Toko
 					</h1>
 					<p class="text-on-surface-variant font-body-md">
-						Pemantauan stok gudang sembako & riwayat kasir real-time.
+						Pemantauan stok gudang sembako & riwayat staf real-time.
 					</p>
 				</div>
-				<div class="flex items-center gap-sm text-primary font-data-mono text-sm">
+				<div class="flex items-center gap-sm text-primary font-data-mono text-sm mt-1 sm:mt-0">
 					<span class="material-symbols-outlined text-[14px]">schedule</span>
 					<span class="font-bold">Shift Pagi • 07:00 - 14:00</span>
 				</div>
 			</div>
 
 			{/* Top Metric Cards */}
-			<div class="grid grid-cols-1 md:grid-cols-4 gap-gutter">
+			<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-gutter">
 				{/* 1. Total Stok */}
 				<div class="bg-surface-container p-lg rounded-xl border border-outline-variant relative overflow-hidden group shadow-lg">
 					<div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">

@@ -7,15 +7,19 @@ use jsonwebtoken::{encode, decode, Header, Validation, EncodingKey, DecodingKey}
 pub struct Claims {
 	pub sub: String,       // user_id
 	pub role: String,      // Always "authenticated" for Supabase PostgREST
-	pub user_role: String, // The actual app role (admin, pemilik, kasir)
+	pub user_role: String, // The actual app role (admin, pemilik, staff)
 	pub username: String,
 	pub fullname: String,
+	pub toko_id: String,   // Current selected store ID
+	pub toko_name: String, // Current selected store name
 	pub exp: usize,        // expiration timestamp
 }
 
 fn get_jwt_secret() -> Vec<u8> {
 	std::env::var("JWT_SECRET")
-		.unwrap_or_else(|_| "retailhub-fallback-super-secret-key-123456789".to_string())
+		.ok()
+		.or_else(|| option_env!("JWT_SECRET").map(|s| s.to_string()))
+		.unwrap_or_else(|| "retailhub-fallback-super-secret-key-123456789".to_string())
 		.into_bytes()
 }
 
@@ -25,6 +29,8 @@ pub fn generate_user_jwt(
 	role: String,
 	username: String,
 	fullname: String,
+	toko_id: String,
+	toko_name: String,
 ) -> Result<String, String> {
 	let current_time = SystemTime::now()
 		.duration_since(UNIX_EPOCH)
@@ -40,6 +46,8 @@ pub fn generate_user_jwt(
 		user_role: role,
 		username,
 		fullname,
+		toko_id,
+		toko_name,
 		exp,
 	};
 
@@ -56,7 +64,7 @@ pub fn generate_user_jwt(
 pub fn verify_user_jwt(token: String) -> Result<Value, String> {
 	let secret = get_jwt_secret();
 	let validation = Validation::default();
-	
+
 	let token_data = decode::<Claims>(
 		&token,
 		&DecodingKey::from_secret(&secret),

@@ -19,6 +19,8 @@
     "@tanstack/solid-router": "latest",
     "@tanstack/solid-router-devtools": "latest",
     "@tauri-apps/api": "^2.11.1",
+    "@tauri-apps/plugin-barcode-scanner": "^2.4.5",
+    "jspdf": "^4.2.1",
     "solid-js": "^1.9.12",
     "tailwindcss": "^4.1.18"
   },

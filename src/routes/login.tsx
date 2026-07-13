@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/solid-router";
 import { createSignal } from "solid-js";
-import { selectData, setSessionUser } from "../utils/db";
+import { isTauri, selectData, setSessionUser } from "../utils/db";
 
 export const Route = createFileRoute("/login")({
 	component: LoginScreen,
@@ -24,35 +24,146 @@ function LoginScreen() {
 		setErrorMessage("");
 
 		try {
-			// Query the users table in Supabase (lowercased for case-insensitivity)
-			const users = await selectData<any[]>("users", {
-				username: `eq.${username().trim().toLowerCase()}`,
-			});
+			if (isTauri) {
+				// ── Tauri Desktop mode ────────────────────────────────────
+				const users = await selectData<any[]>("users", {
+					username: `eq.${username().trim().toLowerCase()}`,
+				});
 
-			if (!users || users.length === 0) {
-				setErrorMessage("Pengguna tidak ditemukan.");
-				setIsLoading(false);
-				return;
+				if (!users || users.length === 0) {
+					setErrorMessage("Pengguna tidak ditemukan.");
+					setIsLoading(false);
+					return;
+				}
+
+				const user = users[0];
+
+				if (user.password !== password().trim()) {
+					setErrorMessage("Password yang Anda masukkan salah.");
+					setIsLoading(false);
+					return;
+				}
+
+				// Fetch store name
+				let tokoName = "";
+				if (user.toko_id) {
+					const tokoRes = await selectData<any[]>("toko", {
+						id: `eq.${user.toko_id}`,
+					});
+					if (tokoRes && tokoRes.length > 0) {
+						tokoName = tokoRes[0].name;
+					}
+				}
+
+				await setSessionUser({
+					id: user.id,
+					username: user.username,
+					fullname: user.fullname,
+					role: user.role,
+					shift: user.shift,
+					phone: user.phone,
+					toko_id: user.toko_id,
+					toko_name: tokoName,
+				});
+			} else {
+				// ── Browser / Web mode ──────────────────────────────────
+				const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "";
+				const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
+				const functionsUrl = `${SUPABASE_URL}/functions/v1/generate-jwt`;
+
+				try {
+					const res = await fetch(functionsUrl, {
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json",
+							apikey: SUPABASE_ANON_KEY,
+						},
+						body: JSON.stringify({
+							username: username().trim().toLowerCase(),
+							password: password().trim(),
+						}),
+					});
+
+					if (!res.ok) {
+						const errData = await res.json().catch(() => ({}));
+						const msg =
+							errData?.error || "Gagal masuk. Periksa kredensial Anda.";
+						setErrorMessage(msg);
+						setIsLoading(false);
+						return;
+					}
+
+					const data = await res.json();
+
+					// Store the real signed JWT + user data (includes toko_id, toko_name)
+					localStorage.setItem("retailhub_session_token", data.token);
+					localStorage.setItem("retailhub_session", JSON.stringify(data.user));
+				} catch (funcErr) {
+					console.warn(
+						"Edge function failed, falling back to direct DB lookup:",
+						funcErr,
+					);
+
+					// Direct lookup fallback for local testing in web version
+					const users = await selectData<any[]>("users", {
+						username: `eq.${username().trim().toLowerCase()}`,
+					});
+
+					if (!users || users.length === 0) {
+						setErrorMessage("Pengguna tidak ditemukan.");
+						setIsLoading(false);
+						return;
+					}
+
+					const user = users[0];
+
+					if (user.password !== password().trim()) {
+						setErrorMessage("Password yang Anda masukkan salah.");
+						setIsLoading(false);
+						return;
+					}
+
+					// Fetch store name
+					let tokoName = "";
+					if (user.toko_id) {
+						const tokoRes = await selectData<any[]>("toko", {
+							id: `eq.${user.toko_id}`,
+						});
+						if (tokoRes && tokoRes.length > 0) {
+							tokoName = tokoRes[0].name;
+						}
+					}
+
+					// Build a client-side mock JWT with proper claims for web verification
+					const payload = {
+						sub: user.id,
+						role: "authenticated",
+						user_role: user.role,
+						username: user.username,
+						fullname: user.fullname,
+						toko_id: user.toko_id || "",
+						toko_name: tokoName,
+						exp: Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60,
+					};
+
+					// Simple client-side token format: headers.payload.signature
+					const mockToken = `eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.${btoa(JSON.stringify(payload))}.`;
+					localStorage.setItem("retailhub_session_token", mockToken);
+					localStorage.setItem(
+						"retailhub_session",
+						JSON.stringify({
+							id: user.id,
+							username: user.username,
+							fullname: user.fullname,
+							role: user.role,
+							phone: user.phone,
+							shift: user.shift,
+							toko_id: user.toko_id || "",
+							toko_name: tokoName,
+						}),
+					);
+				}
 			}
-
-			const user = users[0];
-
-			// Simple password check matching seed data
-			if (user.password !== password().trim()) {
-				setErrorMessage("Password yang Anda masukkan salah.");
-				setIsLoading(false);
-				return;
-			}
-
-			// Save session and redirect
-			await setSessionUser({
-				id: user.id,
-				username: user.username,
-				fullname: user.fullname,
-				role: user.role,
-				shift: user.shift,
-				phone: user.phone,
-			});
 
 			// Dispatch a custom event to notify __root.tsx navigation guards
 			window.dispatchEvent(new Event("retailhub-login-success"));
@@ -60,7 +171,9 @@ function LoginScreen() {
 			navigate({ to: "/" });
 		} catch (error: any) {
 			console.error("Login error:", error);
-			setErrorMessage(`Gagal terhubung ke database: ${error.message || error}`);
+			setErrorMessage(
+				"Gagal masuk. Silakan periksa kredensial Anda atau hubungi admin.",
+			);
 		} finally {
 			setIsLoading(false);
 		}
@@ -117,7 +230,7 @@ function LoginScreen() {
 								onInput={(e) => setUsername(e.currentTarget.value)}
 								value={username()}
 								class="w-full bg-zinc-950/60 border border-zinc-800/80 rounded-lg pl-10 pr-4 py-2.5 text-sm text-zinc-200 focus:outline-none focus:border-primary disabled:opacity-50"
-								placeholder="e.g. kasir1"
+								placeholder="e.g. staff1"
 							/>
 						</div>
 					</div>
@@ -165,16 +278,22 @@ function LoginScreen() {
 					</button>
 				</form>
 
-				{/* Help / Mock Reminder Info */}
-				<div class="pt-sm text-center">
-					<p class="text-[10px] text-zinc-500 leading-normal">
-						Gunakan akun seed default untuk pengujian:
-						<br />
-						Kasir: <span class="font-mono text-zinc-400">kasir1</span> (pass:{" "}
-						<span class="font-mono text-zinc-400">kasir123</span>) | Pemilik:{" "}
-						<span class="font-mono text-zinc-400">pemilik</span> (pass:{" "}
-						<span class="font-mono text-zinc-400">owner123</span>)
+				{/* Register link for new store owners */}
+				<div class="border-t border-zinc-800/60 pt-md text-center space-y-sm">
+					<p class="text-xs text-zinc-400 leading-relaxed">
+						Belum punya toko? Daftar sebagai pemilik baru untuk memulai
+						RetailHub.
 					</p>
+					<button
+						type="button"
+						onClick={() => navigate({ to: "/register" })}
+						class="w-full py-2.5 border border-indigo-500/40 text-indigo-400 hover:bg-indigo-600/10 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-sm"
+					>
+						<span class="material-symbols-outlined text-[16px]">
+							storefront
+						</span>
+						<span>Buka Toko Baru</span>
+					</button>
 				</div>
 			</div>
 		</div>

@@ -10,11 +10,14 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UsersRouteImport } from './routes/users'
+import { Route as StoresRouteImport } from './routes/stores'
 import { Route as ReportsRouteImport } from './routes/reports'
+import { Route as RegisterRouteImport } from './routes/register'
 import { Route as OutboundRouteImport } from './routes/outbound'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as InventoryRouteImport } from './routes/inventory'
 import { Route as InboundRouteImport } from './routes/inbound'
+import { Route as HistoryRouteImport } from './routes/history'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
 
@@ -23,9 +26,19 @@ const UsersRoute = UsersRouteImport.update({
   path: '/users',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StoresRoute = StoresRouteImport.update({
+  id: '/stores',
+  path: '/stores',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ReportsRoute = ReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OutboundRoute = OutboundRouteImport.update({
@@ -48,6 +61,11 @@ const InboundRoute = InboundRouteImport.update({
   path: '/inbound',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HistoryRoute = HistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AboutRoute = AboutRouteImport.update({
   id: '/about',
   path: '/about',
@@ -62,32 +80,41 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/history': typeof HistoryRoute
   '/inbound': typeof InboundRoute
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
   '/outbound': typeof OutboundRoute
+  '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
+  '/stores': typeof StoresRoute
   '/users': typeof UsersRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/history': typeof HistoryRoute
   '/inbound': typeof InboundRoute
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
   '/outbound': typeof OutboundRoute
+  '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
+  '/stores': typeof StoresRoute
   '/users': typeof UsersRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/history': typeof HistoryRoute
   '/inbound': typeof InboundRoute
   '/inventory': typeof InventoryRoute
   '/login': typeof LoginRoute
   '/outbound': typeof OutboundRoute
+  '/register': typeof RegisterRoute
   '/reports': typeof ReportsRoute
+  '/stores': typeof StoresRoute
   '/users': typeof UsersRoute
 }
 export interface FileRouteTypes {
@@ -95,42 +122,54 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/about'
+    | '/history'
     | '/inbound'
     | '/inventory'
     | '/login'
     | '/outbound'
+    | '/register'
     | '/reports'
+    | '/stores'
     | '/users'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/about'
+    | '/history'
     | '/inbound'
     | '/inventory'
     | '/login'
     | '/outbound'
+    | '/register'
     | '/reports'
+    | '/stores'
     | '/users'
   id:
     | '__root__'
     | '/'
     | '/about'
+    | '/history'
     | '/inbound'
     | '/inventory'
     | '/login'
     | '/outbound'
+    | '/register'
     | '/reports'
+    | '/stores'
     | '/users'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
+  HistoryRoute: typeof HistoryRoute
   InboundRoute: typeof InboundRoute
   InventoryRoute: typeof InventoryRoute
   LoginRoute: typeof LoginRoute
   OutboundRoute: typeof OutboundRoute
+  RegisterRoute: typeof RegisterRoute
   ReportsRoute: typeof ReportsRoute
+  StoresRoute: typeof StoresRoute
   UsersRoute: typeof UsersRoute
 }
 
@@ -143,11 +182,25 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof UsersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/stores': {
+      id: '/stores'
+      path: '/stores'
+      fullPath: '/stores'
+      preLoaderRoute: typeof StoresRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reports': {
       id: '/reports'
       path: '/reports'
       fullPath: '/reports'
       preLoaderRoute: typeof ReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/outbound': {
@@ -178,6 +231,13 @@ declare module '@tanstack/solid-router' {
       preLoaderRoute: typeof InboundRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/history': {
+      id: '/history'
+      path: '/history'
+      fullPath: '/history'
+      preLoaderRoute: typeof HistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/about': {
       id: '/about'
       path: '/about'
@@ -198,11 +258,14 @@ declare module '@tanstack/solid-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
+  HistoryRoute: HistoryRoute,
   InboundRoute: InboundRoute,
   InventoryRoute: InventoryRoute,
   LoginRoute: LoginRoute,
   OutboundRoute: OutboundRoute,
+  RegisterRoute: RegisterRoute,
   ReportsRoute: ReportsRoute,
+  StoresRoute: StoresRoute,
   UsersRoute: UsersRoute,
 }
 export const routeTree = rootRouteImport

@@ -8,21 +8,26 @@
 -- Disable Row Level Security first (optional, clean practice)
 ALTER TABLE IF EXISTS detail_transaksi DISABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS transaksi DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS barcode DISABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS barang DISABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS users DISABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS toko DISABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS keep_alive DISABLE ROW LEVEL SECURITY;
 
 -- Drop all tables using CASCADE to clean up constraints, triggers, and indices
 DROP TABLE IF EXISTS detail_transaksi CASCADE;
 DROP TABLE IF EXISTS transaksi CASCADE;
+DROP TABLE IF EXISTS barcode CASCADE;
 DROP TABLE IF EXISTS barang CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
+DROP TABLE IF EXISTS toko CASCADE;
 DROP TABLE IF EXISTS keep_alive CASCADE;
 
 -- Drop custom types
 DROP TYPE IF EXISTS user_role CASCADE;
 
--- Drop trigger functions
+-- Drop trigger functions + void function
+DROP FUNCTION IF EXISTS void_transaction(UUID, TEXT, TEXT) CASCADE;
 DROP FUNCTION IF EXISTS deduct_stock_on_insert() CASCADE;
 DROP FUNCTION IF EXISTS update_modified_column() CASCADE;
 

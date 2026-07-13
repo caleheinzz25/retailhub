@@ -22,8 +22,14 @@ tauri = { version = "2", features = [] }
 tauri-plugin-opener = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-reqwest = { version = "0.12", features = ["json"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 tokio = { version = "1", features = ["full"] }
 dotenvy = "0.15"
 jsonwebtoken = "9"
+btleplug = { version = "0.11", features = ["serde"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+futures = "0.3"
+
+[target.'cfg(any(target_os = "android", target_os = "ios"))'.dependencies]
+tauri-plugin-barcode-scanner = "2.4.5"
 

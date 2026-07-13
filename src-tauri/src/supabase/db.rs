@@ -169,3 +169,42 @@ pub async fn supabase_delete(
 		Err(format!("Supabase error ({}): {}", status, text))
 	}
 }
+
+#[tauri::command]
+pub async fn supabase_rpc(
+	client_state: State<'_, SupabaseClient>,
+	function_name: String,
+	params: Value,
+	user_token: Option<String>,
+) -> Result<Value, String> {
+	println!("\x1b[34m[Supabase RPC]\x1b[0m function='{}'", function_name);
+	let url = format!("{}/rest/v1/rpc/{}", client_state.url, function_name);
+
+	let mut headers = client_state.get_headers(user_token.as_deref());
+	headers.insert(
+		reqwest::header::CONTENT_TYPE,
+		reqwest::header::HeaderValue::from_static("application/json"),
+	);
+
+	let response = client_state.client
+		.post(&url)
+		.headers(headers)
+		.json(&params)
+		.send()
+		.await
+		.map_err(|e| {
+			eprintln!("\x1b[31m[Supabase RPC CONNECTION ERROR]\x1b[0m function='{}' error={}", function_name, e);
+			e.to_string()
+		})?;
+
+	let status = response.status();
+	let text = response.text().await.map_err(|e| e.to_string())?;
+
+	if status.is_success() {
+		println!("\x1b[32m[Supabase RPC SUCCESS]\x1b[0m function='{}' status={}", function_name, status);
+		serde_json::from_str(&text).map_err(|e| format!("Failed to parse response: {}", e))
+	} else {
+		eprintln!("\x1b[31m[Supabase RPC ERROR]\x1b[0m function='{}' status={} body={}", function_name, status, text);
+		Err(format!("Supabase error ({}): {}", status, text))
+	}
+}
